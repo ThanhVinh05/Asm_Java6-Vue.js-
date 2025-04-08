@@ -5,11 +5,14 @@ const API_URL = 'http://localhost:8080/product'; // Thay đổi URL nếu cần
 //Trang home
 export const getFeaturedProducts = async () => {
     try {
-        const response = await axios.get(`${API_URL}/list?page=0&size=6`); // Lấy 6 sản phẩm đầu tiên
+        const response = await axios.get(`${API_URL}/list?page=0&size=8`); // Lấy 6 sản phẩm đầu tiên
         return response.data.data.products; // Trả về mảng sản phẩm
     } catch (error) {
         console.error('Error fetching featured products:', error);
-        throw error;
+        if (error.code === 'ERR_NETWORK') {
+            throw new Error('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.');
+        }
+        throw error.response?.data?.message || 'Không thể tải sản phẩm. Vui lòng thử lại sau.';
     }
 };
 

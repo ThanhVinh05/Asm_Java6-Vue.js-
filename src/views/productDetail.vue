@@ -1,178 +1,165 @@
 <template>
-    <div class="container pb-5">
-        <section class="bg-light">
-            <div class="container pb-5">
+    <div class="product-detail-container">
+        <div class="container py-5">
+            <section class="product-main bg-light rounded-3 p-4 mb-5">
                 <div class="row">
-                    <div class="col-lg-5 mt-5">
-                        <div class="card mb-3">
-                            <img class="card-img img-fluid" :src="mainImage" alt="Product Image" id="product-detail">
-                        </div>
-                        <div class="row" v-if="product.image && JSON.parse(product.image).length > 1">
-                            <div class="col-1 align-self-center">
-                                <a href="#product-images-carousel" role="button" data-bs-slide="prev"
-                                    @click="prevImage">
-                                    <i class="text-dark fas fa-chevron-left"></i>
-                                    <span class="sr-only">Previous</span>
-                                </a>
+                    <!-- Product Images -->
+                    <div class="col-lg-5">
+                        <div class="product-gallery">
+                            <div class="main-image-container mb-4">
+                                <div class="card border-0 shadow-sm">
+                                    <img class="card-img img-fluid" :src="mainImage" alt="Product Image"
+                                        id="product-detail">
+                                </div>
                             </div>
-                            <div class="col-10 carousel slide carousel-multi-item" id="product-images-carousel"
-                                data-bs-ride="carousel">
-                                <div class="carousel-inner product-links-wap" role="listbox">
-                                    <div class="carousel-item active">
-                                        <div class="row">
+                            <div class="thumbnail-slider" v-if="product.image && JSON.parse(product.image).length > 1">
+                                <div class="row g-2">
+                                    <div class="col-1 d-flex align-items-center justify-content-center">
+                                        <button class="btn btn-link text-dark p-0" @click="prevImage">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                    </div>
+                                    <div class="col-10">
+                                        <div class="row g-2">
                                             <div class="col-4" v-for="(img, index) in visibleImages" :key="index">
-                                                <a href="#" @click.prevent="setMainImageOnClick(img)">
-                                                    <img class="card-img img-fluid" :src="`/src/assets/img/${img}`"
+                                                <div class="thumbnail-item" :class="{ active: mainImage.includes(img) }"
+                                                    @click="setMainImageOnClick(img)">
+                                                    <img class="img-fluid rounded" :src="`/src/assets/img/${img}`"
                                                         :alt="`Product Image ${index + 1}`">
-                                                </a>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="col-1 d-flex align-items-center justify-content-center">
+                                        <button class="btn btn-link text-dark p-0" @click="nextImage">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-1 align-self-center">
-                                <a href="#product-images-carousel" role="button" data-bs-slide="next"
-                                    @click="nextImage">
-                                    <i class="text-dark fas fa-chevron-right"></i>
-                                    <span class="sr-only">Next</span>
-                                </a>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-7 mt-5">
-                        <div class="card">
-                            <div class="card-body">
-                                <h1 class="h2">{{ product.productName }}</h1>
-                                <p class="h3 py-2">${{ product.productPrice }}</p>
-                                <p class="py-2"></p>
-                                <ul class="list-inline"></ul>
-                                <h6>Description:</h6>
-                                <p>{{ product.description }}</p>
-                                <ul class="list-inline">
-                                    <li class="list-inline-item">
-                                        <h6>Brand:</h6>
-                                    </li>
-                                    <li class="list-inline-item">
-                                        <p class="text-muted"><strong>Easy Wear</strong></p>
-                                    </li>
-                                </ul>
-                                <ul class="list-inline">
-                                    <li class="list-inline-item">
-                                        <h6>Avaliable Color :</h6>
-                                    </li>
-                                    <li class="list-inline-item">
-                                        <p class="text-muted"><strong>White / Black</strong></p>
-                                    </li>
-                                </ul>
-                                <h6>Specification:</h6>
-                                <ul class="list-unstyled pb-3">
-                                    <li>Lorem ipsum dolor sit</li>
-                                    <li>Amet, consectetur</li>
-                                    <li>Adipiscing elit,set</li>
-                                    <li>Duis aute irure</li>
-                                    <li>Ut enim ad minim</li>
-                                    <li>Dolore magna aliqua</li>
-                                    <li>Excepteur sint</li>
-                                </ul>
-                                <form action="" method="GET">
-                                    <input type="hidden" name="product-title" value="Activewear">
-                                    <div class="row">
-                                        <div class="col-auto">
-                                            <ul class="list-inline pb-3">
-                                                <li class="list-inline-item">Size :
-                                                    <input type="hidden" name="product-size" id="product-size"
-                                                        value="S">
-                                                </li>
-                                                <li class="list-inline-item"><span
-                                                        class="btn btn-success btn-size">S</span></li>
-                                                <li class="list-inline-item"><span
-                                                        class="btn btn-success btn-size">M</span></li>
-                                                <li class="list-inline-item"><span
-                                                        class="btn btn-success btn-size">L</span></li>
-                                                <li class="list-inline-item"><span
-                                                        class="btn btn-success btn-size">XL</span></li>
-                                            </ul>
+
+                    <!-- Product Info -->
+                    <div class="col-lg-7">
+                        <div class="product-info card border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <h1 class="product-title h2 mb-3">{{ product.productName }}</h1>
+                                <p class="product-price h3 text-success mb-4">${{ product.productPrice }}</p>
+
+                                <div class="product-description mb-4">
+                                    <h6 class="text-muted mb-2">Description:</h6>
+                                    <p class="mb-0">{{ product.description }}</p>
+                                </div>
+
+                                <div class="product-meta row mb-4">
+                                    <div class="col-md-6">
+                                        <h6 class="text-muted mb-2">Brand:</h6>
+                                        <p class="mb-0">Easy Wear</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-muted mb-2">Available Color:</h6>
+                                        <p class="mb-0">White / Black</p>
+                                    </div>
+                                </div>
+
+                                <form @submit.prevent="addToCart" class="product-form">
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <h6 class="text-muted mb-2">Size:</h6>
+                                            <div class="size-selector">
+                                                <button type="button" class="btn btn-outline-secondary size-btn"
+                                                    v-for="size in ['S', 'M', 'L', 'XL']" :key="size"
+                                                    @click="selectedSize = size"
+                                                    :class="{ 'active': selectedSize === size }">
+                                                    {{ size }}
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div class="col-auto">
-                                            <ul class="list-inline pb-3">
-                                                <li class="list-inline-item text-right">
-                                                    Quantity
-                                                    <input type="hidden" name="product-quanity" id="product-quanity"
-                                                        value="1">
-                                                </li>
-                                                <li class="list-inline-item"><span class="btn btn-success"
-                                                        id="btn-minus">-</span></li>
-                                                <li class="list-inline-item"><span class="badge bg-secondary"
-                                                        id="var-value">1</span></li>
-                                                <li class="list-inline-item"><span class="btn btn-success"
-                                                        id="btn-plus">+</span></li>
-                                            </ul>
+                                        <div class="col-md-6">
+                                            <h6 class="text-muted mb-2">Quantity:</h6>
+                                            <div class="quantity-selector">
+                                                <button class="btn btn-outline-secondary" type="button"
+                                                    @click="decreaseQuantity">
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                                <input type="number" class="form-control" v-model="quantity" min="1">
+                                                <button class="btn btn-outline-secondary" type="button"
+                                                    @click="increaseQuantity">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="row pb-3">
-                                        <div class="col d-grid">
-                                            <button type="submit" class="btn btn-success btn-lg" name="submit"
-                                                value="buy">Buy</button>
-                                        </div>
-                                        <div class="col d-grid">
-                                            <button type="submit" class="btn btn-success btn-lg" name="submit"
-                                                value="addtocard">Add To Cart</button>
-                                        </div>
+
+                                    <div class="product-actions d-grid gap-2">
+                                        <button type="submit" class="btn btn-success btn-lg">
+                                            <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                                        </button>
+                                        <button type="button" class="btn btn-outline-success btn-lg">
+                                            <i class="fas fa-bolt me-2"></i>Buy Now
+                                        </button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
-        <section class="py-5">
-            <div class="container">
-                <div class="row text-left p-2 pb-3">
-                    <h4>Related Products</h4>
-                </div>
-                <div v-if="relatedProducts.length > 0">
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="row">
-                                <div class="col-3" v-for="(product, index) in displayedProducts" :key="index">
-                                    <div class="product-wap card h-100 rounded-0">
-                                        <div class="card rounded-0">
-                                            <img class="card-img rounded-0 img-fluid"
-                                                :src="getFirstImageUrl(product.image)" alt="" />
-                                        </div>
-                                        <div class="card-body">
+            </section>
+
+            <!-- Related Products -->
+            <section class="related-products">
+                <div class="container px-0">
+                    <h4 class="section-title mb-4">Related Products</h4>
+                    <div v-if="relatedProducts.length > 0">
+                        <div class="row g-4">
+                            <div class="col-6 col-md-3" v-for="(product, index) in displayedProducts" :key="index">
+                                <div class="card h-100 border-0 shadow-sm product-card">
+                                    <div class="product-image">
+                                        <img class="img-fluid" :src="getFirstImageUrl(product.image)"
+                                            :alt="product.productName">
+                                        <div class="product-overlay">
                                             <router-link
                                                 :to="{ name: 'productDetail', params: { productId: product.id } }"
-                                                class="h3 text-decoration-none">
-                                                {{ product.productName }}
+                                                class="btn btn-light btn-sm">
+                                                <i class="fas fa-eye me-2"></i>View Details
                                             </router-link>
-                                            <p class="text-center mb-0">${{ product.productPrice }}</p>
                                         </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <h5 class="product-title">{{ product.productName }}</h5>
+                                        <p class="product-price mb-0">${{ product.productPrice }}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 d-flex justify-content-center mt-3">
-                            <button class="btn btn-outline-secondary mx-1" :disabled="startIndex === 0"
+                        <div class="navigation-buttons d-flex justify-content-center mt-4">
+                            <button class="btn btn-outline-secondary mx-2" :disabled="startIndex === 0"
                                 @click="prevProducts">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
-                            <button class="btn btn-outline-secondary mx-1"
+                            <button class="btn btn-outline-secondary mx-2"
                                 :disabled="startIndex + 4 >= relatedProducts.length" @click="nextProducts">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
                     </div>
+                    <div v-else class="text-center py-5">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
                 </div>
-                <div v-else>Loading related products...</div>
-            </div>
-        </section>
+            </section>
+        </div>
     </div>
 </template>
 
 <script>
 import { getProductDetail, getProducts } from '/src/api/product';
+import { addToCart } from '../api/cart';
+import { cartStore } from '../store/cartStore';
+import Swal from 'sweetalert2';
 
 export default {
     data() {
@@ -185,6 +172,8 @@ export default {
             autoSlideInterval: null,
             startIndex: 0, // Vị trí bắt đầu của sản phẩm hiển thị
             productsPerPage: 4, // Số sản phẩm hiển thị trên mỗi trang
+            selectedSize: 'S',
+            quantity: 1,
         };
     },
     async mounted() {
@@ -260,15 +249,232 @@ export default {
         prevProducts() {
             this.startIndex -= this.productsPerPage;
         },
+        async addToCart() {
+            try {
+                await addToCart(this.product.id, this.quantity);
+                await cartStore.updateCartCount();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: 'Đã thêm sản phẩm vào giỏ hàng',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi',
+                    text: 'Không thể thêm vào giỏ hàng. Vui lòng thử lại sau.'
+                });
+            }
+        },
+        decreaseQuantity() {
+            if (this.quantity > 1) {
+                this.quantity--;
+            }
+        },
+        increaseQuantity() {
+            this.quantity++;
+        },
     },
 };
 </script>
 
 <style scoped>
-.carousel-indicators button {
-    width: 10px;
-    height: 10px;
+.product-detail-container {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.product-main {
+    background-color: white !important;
+}
+
+.product-gallery {
+    position: sticky;
+    top: 20px;
+}
+
+.main-image-container {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.main-image-container img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.thumbnail-slider {
+    position: relative;
+}
+
+.thumbnail-item {
+    cursor: pointer;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.thumbnail-item.active {
+    border-color: #198754;
+}
+
+.thumbnail-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-info {
+    border-radius: 10px;
+}
+
+.product-title {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.product-price {
+    color: #198754;
+    font-weight: bold;
+}
+
+.product-description {
+    color: #6c757d;
+    line-height: 1.6;
+}
+
+.size-selector {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.size-btn {
+    min-width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.size-btn.active {
+    background-color: #198754;
+    color: white;
+    border-color: #198754;
+}
+
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    max-width: 150px;
+}
+
+.quantity-selector input {
+    text-align: center;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+}
+
+.quantity-selector button {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.product-image {
+    position: relative;
+    padding-top: 100%;
+    overflow: hidden;
+}
+
+.product-image img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.product-card:hover .product-overlay {
+    opacity: 1;
+}
+
+.product-card:hover .product-image img {
+    transform: scale(1.1);
+}
+
+.section-title {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.navigation-buttons .btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 50%;
-    margin: 0 5px;
+    transition: all 0.3s ease;
+}
+
+.navigation-buttons .btn:hover:not(:disabled) {
+    background-color: #198754;
+    color: white;
+    border-color: #198754;
+}
+
+@media (max-width: 991.98px) {
+    .product-gallery {
+        position: static;
+        margin-bottom: 2rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .size-selector {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .quantity-selector {
+        max-width: 100%;
+    }
 }
 </style>

@@ -1,185 +1,105 @@
 <template>
-    <div>
-        <section class="bg-success py-5">
-            <div class="container">
-                <div class="row align-items-center py-5">
-                    <div class="col-md-8 text-white">
-                        <h1>About Us</h1>
-                        <p>
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                            tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-                            quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                        </p>
-                    </div>
-                    <div class="col-md-4">
-                        <img src="/src/assets/img/about-hero.svg" alt="About Hero">
+    <div class="container py-5">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h1 class="display-5 fw-bold mb-3">About Badminton Shop</h1>
+                <p class="lead text-muted">Your trusted partner in badminton equipment</p>
+            </div>
+        </div>
+        <div class="row mb-5">
+            <div class="col-lg-8 mx-auto">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-5">
+                        <h2 class="fw-bold mb-4">
+                            <i class="fas fa-history me-2 text-success"></i>Our Story
+                        </h2>
+                        <p class="text-muted mb-4">Founded in 2024, Badminton Shop started with a simple mission: to
+                            provide high-quality badminton equipment to players of all levels. Our passion for the sport
+                            drives us to constantly improve and expand our product range.</p>
+                        <p class="text-muted">We believe that every player deserves access to the best equipment,
+                            regardless of their skill level. That's why we carefully select our products and work
+                            directly with manufacturers to ensure quality and affordability.</p>
                     </div>
                 </div>
             </div>
-        </section>
-        <!-- Close Banner -->
-
-        <!-- Start Section -->
-        <section class="container py-5">
-            <div class="row text-center pt-5 pb-3">
-                <div class="col-lg-6 m-auto">
-                    <h1 class="h1">Our Services</h1>
-                    <p>
-                        Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                        Lorem ipsum dolor sit amet.
-                    </p>
-                </div>
+        </div>
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-6 fw-bold mb-4">Our Values</h2>
+                <p class="lead text-muted mb-5">What makes us different</p>
             </div>
-            <div class="row">
-
-                <div class="col-md-6 col-lg-3 pb-5">
-                    <div class="h-100 py-5 services-icon-wap shadow">
-                        <div class="h1 text-success text-center"><i class="fa fa-truck fa-lg"></i></div>
-                        <h2 class="h5 mt-4 text-center">Delivery Services</h2>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-3 pb-5">
-                    <div class="h-100 py-5 services-icon-wap shadow">
-                        <div class="h1 text-success text-center"><i class="fas fa-exchange-alt"></i></div>
-                        <h2 class="h5 mt-4 text-center">Shipping & Return</h2>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-3 pb-5">
-                    <div class="h-100 py-5 services-icon-wap shadow">
-                        <div class="h1 text-success text-center"><i class="fa fa-percent"></i></div>
-                        <h2 class="h5 mt-4 text-center">Promotion</h2>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-3 pb-5">
-                    <div class="h-100 py-5 services-icon-wap shadow">
-                        <div class="h1 text-success text-center"><i class="fa fa-user"></i></div>
-                        <h2 class="h5 mt-4 text-center">24 Hours Service</h2>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- End Section -->
-
-        <!-- Start Brands -->
-        <section class="bg-light py-5">
-            <div class="container my-4">
-                <div class="row text-center py-3">
-                    <div class="col-lg-6 m-auto">
-                        <h1 class="h1">Our Brands</h1>
-                        <p>
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                            Lorem ipsum dolor sit amet.
-                        </p>
-                    </div>
-                    <div class="col-lg-9 m-auto tempaltemo-carousel">
-                        <div class="row d-flex flex-row">
-                            <!--Controls-->
-                            <div class="col-1 align-self-center">
-                                <a class="h1" href="#templatemo-slide-brand" role="button" data-bs-slide="prev">
-                                    <i class="text-light fas fa-chevron-left"></i>
-                                </a>
-                            </div>
-                            <!--End Controls-->
-
-                            <!--Carousel Wrapper-->
-                            <div class="col">
-                                <div class="carousel slide carousel-multi-item pt-2 pt-md-0" id="templatemo-slide-brand"
-                                    data-bs-ride="carousel">
-                                    <!--Slides-->
-                                    <div class="carousel-inner product-links-wap" role="listbox">
-
-                                        <!--First slide-->
-                                        <div class="carousel-item active">
-                                            <div class="row">
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_01.png" alt="Brand Logo"></a>
-                                                </div>
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_02.png" alt="Brand Logo"></a>
-                                                </div>
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_03.png" alt="Brand Logo"></a>
-                                                </div>
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_04.png" alt="Brand Logo"></a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!--End First slide-->
-
-                                        <!--Second slide-->
-                                        <div class="carousel-item">
-                                            <div class="row">
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_01.png" alt="Brand Logo"></a>
-                                                </div>
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_02.png" alt="Brand Logo"></a>
-                                                </div>
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_03.png" alt="Brand Logo"></a>
-                                                </div>
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_04.png" alt="Brand Logo"></a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!--End Second slide-->
-
-                                        <!--Third slide-->
-                                        <div class="carousel-item">
-                                            <div class="row">
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_01.png" alt="Brand Logo"></a>
-                                                </div>
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_02.png" alt="Brand Logo"></a>
-                                                </div>
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_03.png" alt="Brand Logo"></a>
-                                                </div>
-                                                <div class="col-3 p-md-5">
-                                                    <a href="#"><img class="img-fluid brand-img"
-                                                            src="/src/assets/img/brand_04.png" alt="Brand Logo"></a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!--End Third slide-->
-
-                                    </div>
-                                    <!--End Slides-->
-                                </div>
-                            </div>
-                            <!--End Carousel Wrapper-->
-
-                            <!--Controls-->
-                            <div class="col-1 align-self-center">
-                                <a class="h1" href="#templatemo-slide-brand" role="button" data-bs-slide="next">
-                                    <i class="text-light fas fa-chevron-right"></i>
-                                </a>
-                            </div>
-                            <!--End Controls-->
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm text-center p-4 value-card">
+                    <div class="card-body">
+                        <div class="value-icon mb-4">
+                            <i class="fas fa-medal text-success fa-3x"></i>
                         </div>
+                        <h5 class="card-title">Quality First</h5>
+                        <p class="card-text text-muted">We never compromise on quality. Every product in our store meets
+                            our strict standards.</p>
                     </div>
                 </div>
             </div>
-        </section>
-        <!--End Brands-->
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm text-center p-4 value-card">
+                    <div class="card-body">
+                        <div class="value-icon mb-4">
+                            <i class="fas fa-handshake text-success fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Customer Satisfaction</h5>
+                        <p class="card-text text-muted">Your satisfaction is our priority. We're here to help you find
+                            the perfect equipment.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm text-center p-4 value-card">
+                    <div class="card-body">
+                        <div class="value-icon mb-4">
+                            <i class="fas fa-leaf text-success fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Sustainability</h5>
+                        <p class="card-text text-muted">We're committed to reducing our environmental impact through
+                            sustainable practices.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
-<script></script>
-<style></style>
+
+<style scoped>
+.value-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 10px;
+}
+
+.value-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.value-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(25, 135, 84, 0.1);
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.value-card:hover .value-icon {
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .value-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>

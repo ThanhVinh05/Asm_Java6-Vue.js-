@@ -25,24 +25,30 @@
                 <div class="col-md-4 pt-5">
                     <h2 class="h2 text-light border-bottom pb-3 border-light">Products</h2>
                     <ul class="list-unstyled text-light footer-link-list">
-                        <li><a class="text-decoration-none" href="#">Vợt Cầu Lông</a></li>
-                        <li><a class="text-decoration-none" href="#">Giầy Cầu Lông</a></li>
-                        <li><a class="text-decoration-none" href="#">Balo Cầu Lông</a></li>
-                        <li><a class="text-decoration-none" href="#">Áo Cầu Lông</a></li>
-                        <li><a class="text-decoration-none" href="#">Váy Cầu Lông</a></li>
-                        <li><a class="text-decoration-none" href="#">Quần Cầu Lông</a></li>
-                        <li><a class="text-decoration-none" href="#">Phụ Kiện Cầu Lông</a></li>
+                        <li><router-link class="text-decoration-none" to="/shop?category=racket">Vợt Cầu
+                                Lông</router-link></li>
+                        <li><router-link class="text-decoration-none" to="/shop?category=shoes">Giầy Cầu
+                                Lông</router-link></li>
+                        <li><router-link class="text-decoration-none" to="/shop?category=bag">Balo Cầu
+                                Lông</router-link></li>
+                        <li><router-link class="text-decoration-none" to="/shop?category=shirt">Áo Cầu
+                                Lông</router-link></li>
+                        <li><router-link class="text-decoration-none" to="/shop?category=dress">Váy Cầu
+                                Lông</router-link></li>
+                        <li><router-link class="text-decoration-none" to="/shop?category=pants">Quần Cầu
+                                Lông</router-link></li>
+                        <li><router-link class="text-decoration-none" to="/shop?category=accessories">Phụ Kiện Cầu
+                                Lông</router-link></li>
                     </ul>
                 </div>
 
                 <div class="col-md-4 pt-5">
                     <h2 class="h2 text-light border-bottom pb-3 border-light">Further Info</h2>
                     <ul class="list-unstyled text-light footer-link-list">
-                        <li><a class="text-decoration-none" href="#">Home</a></li>
-                        <li><a class="text-decoration-none" href="#">About Us</a></li>
-                        <li><a class="text-decoration-none" href="#">Shop Locations</a></li>
-                        <li><a class="text-decoration-none" href="#">FAQs</a></li>
-                        <li><a class="text-decoration-none" href="#">Contact</a></li>
+                        <li><router-link class="text-decoration-none" to="/">Home</router-link></li>
+                        <li><router-link class="text-decoration-none" to="/about">About Us</router-link></li>
+                        <li><router-link class="text-decoration-none" to="/contact">Contact</router-link></li>
+                        <li><router-link class="text-decoration-none" to="/faq">FAQs</router-link></li>
                     </ul>
                 </div>
 
@@ -55,20 +61,24 @@
                 <div class="col-auto me-auto">
                     <ul class="list-inline text-left footer-icons">
                         <li class="list-inline-item border border-light rounded-circle text-center">
-                            <a class="text-light text-decoration-none" target="_blank" href=""><i
-                                    class="fab fa-facebook-f fa-lg fa-fw"></i></a>
+                            <a class="text-light text-decoration-none" target="_blank" href="https://facebook.com">
+                                <i class="fab fa-facebook-f fa-lg fa-fw"></i>
+                            </a>
                         </li>
                         <li class="list-inline-item border border-light rounded-circle text-center">
-                            <a class="text-light text-decoration-none" target="_blank" href=""><i
-                                    class="fab fa-instagram fa-lg fa-fw"></i></a>
+                            <a class="text-light text-decoration-none" target="_blank" href="https://instagram.com">
+                                <i class="fab fa-instagram fa-lg fa-fw"></i>
+                            </a>
                         </li>
                         <li class="list-inline-item border border-light rounded-circle text-center">
-                            <a class="text-light text-decoration-none" target="_blank" href=""><i
-                                    class="fab fa-twitter fa-lg fa-fw"></i></a>
+                            <a class="text-light text-decoration-none" target="_blank" href="https://twitter.com">
+                                <i class="fab fa-twitter fa-lg fa-fw"></i>
+                            </a>
                         </li>
                         <li class="list-inline-item border border-light rounded-circle text-center">
-                            <a class="text-light text-decoration-none" target="_blank" href=""><i
-                                    class="fab fa-linkedin fa-lg fa-fw"></i></a>
+                            <a class="text-light text-decoration-none" target="_blank" href="https://linkedin.com">
+                                <i class="fab fa-linkedin fa-lg fa-fw"></i>
+                            </a>
                         </li>
                     </ul>
                 </div>
@@ -82,22 +92,34 @@
                 </div>
             </div>
         </div>
-
-        <!--        <div class="w-100 bg-black py-3">-->
-        <!--            <div class="container">-->
-        <!--                <div class="row pt-2">-->
-        <!--                    <div class="col-12">-->
-        <!--                        <p class="text-left text-light">-->
-        <!--                            Copyright &copy; 2021 Company Name -->
-        <!--                            | Designed by <a rel="sponsored" href="https://templatemo.com" target="_blank">TemplateMo</a>-->
-        <!--                        </p>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--        </div>-->
-
     </footer>
     <!-- End Footer -->
 </template>
-<script></script>
-<style></style>
+
+<script>
+export default {
+    name: 'Footer'
+}
+</script>
+
+<style scoped>
+.footer-link-list li {
+    margin-bottom: 0.5rem;
+}
+
+.footer-link-list a:hover {
+    color: #198754 !important;
+}
+
+.footer-icons li {
+    width: 2.5rem;
+    height: 2.5rem;
+    line-height: 2.5rem;
+    margin-right: 0.5rem;
+}
+
+.footer-icons a:hover {
+    color: #198754 !important;
+    border-color: #198754 !important;
+}
+</style>
