@@ -68,11 +68,22 @@ export const tokenService = {
 
     hasRole(role) {
         const userInfo = this.getUserInfo();
-        return userInfo?.role?.some(r => 
-            typeof r === 'string' 
-                ? r === role
-                : r.authority === role
-        );
+        if (!userInfo?.role) return false;
+
+        const userRole = userInfo.role;
+        
+        // Kiểm tra nếu role là array của objects
+        if (Array.isArray(userRole)) {
+            return userRole.some(r => r.authority === role);
+        }
+        
+        // Kiểm tra nếu role là object
+        if (typeof userRole === 'object') {
+            return userRole.authority === role;
+        }
+        
+        // Kiểm tra nếu role là string
+        return userRole === role;
     },
 
     isTokenExpired() {

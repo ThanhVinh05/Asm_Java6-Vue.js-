@@ -86,6 +86,10 @@
                                 <h5 class="text-success">
                                     <i class="fas fa-map-marker-alt me-2"></i>
                                     Thông tin địa chỉ
+                                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
+                                        title="Cập nhật lại chọn địa chỉ" @click="forceUpdateSelects">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
                                 </h5>
                             </div>
                             <div class="row g-3">
@@ -98,9 +102,9 @@
                                         <select class="form-select" id="province" v-model="selectedCity"
                                             @change="handleCityChange(selectedCity)">
                                             <option value="">Chọn tỉnh/thành phố</option>
-                                            <option v-for="province in provinces" :key="province.code"
-                                                :value="province">
-                                                {{ province.name }}
+                                            <option v-for="province in provinces" :key="province.code" :value="province"
+                                                :selected="selectedCity && selectedCity.code === province.code">
+                                                {{ province.displayName || province.name }}
                                             </option>
                                         </select>
                                     </div>
@@ -115,9 +119,9 @@
                                         <select class="form-select" id="district" v-model="selectedDistrict"
                                             @change="handleDistrictChange(selectedDistrict)" :disabled="!selectedCity">
                                             <option value="">Chọn quận/huyện</option>
-                                            <option v-for="district in districts" :key="district.code"
-                                                :value="district">
-                                                {{ district.name }}
+                                            <option v-for="district in districts" :key="district.code" :value="district"
+                                                :selected="selectedDistrict && selectedDistrict.code === district.code">
+                                                {{ district.displayName || district.name }}
                                             </option>
                                         </select>
                                     </div>
@@ -132,8 +136,9 @@
                                         <select class="form-select" id="ward" v-model="selectedWard"
                                             :disabled="!selectedDistrict">
                                             <option value="">Chọn phường/xã</option>
-                                            <option v-for="ward in wards" :key="ward.code" :value="ward">
-                                                {{ ward.name }}
+                                            <option v-for="ward in wards" :key="ward.code" :value="ward"
+                                                :selected="selectedWard && selectedWard.code === ward.code">
+                                                {{ ward.displayName || ward.name }}
                                             </option>
                                         </select>
                                     </div>
@@ -187,9 +192,107 @@
 
 <script>
 import { ref, onMounted, watch } from 'vue';
-import { getUserProfile, updateUserProfile } from '../api/user';
-import { getProvinces, getDistricts, getWards } from '../api/address';
+import { getUserProfile, updateUserProfile } from '../../api/user';
+import { getProvinces, getDistricts, getWards } from '../../api/address';
 import Swal from 'sweetalert2';
+
+// Helper function để chuẩn hóa tên địa chỉ
+const normalizeName = (name) => {
+    if (!name) return '';
+    // Loại bỏ các tiền tố phổ biến trước khi so sánh
+    let normalizedName = name.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+        .trim();
+
+    // Loại bỏ các tiền tố để so sánh chính xác hơn
+    const prefixes = ['tinh ', 'thanh pho ', 'quan ', 'huyen ', 'phuong ', 'xa ', 'thi xa ', 'thi tran '];
+    prefixes.forEach(prefix => {
+        if (normalizedName.startsWith(prefix)) {
+            normalizedName = normalizedName.substring(prefix.length);
+        }
+    });
+
+    return normalizedName;
+};
+
+// Helper function để tìm địa chỉ phù hợp
+const findMatchingAddress = (list, searchName) => {
+    console.log('Searching for:', searchName, 'in list of', list.length, 'items');
+    const normalizedSearch = normalizeName(searchName);
+
+    // Log first few items from list for debugging
+    if (list.length > 0) {
+        console.log('First item in list:', list[0]);
+    }
+
+    // 1. Try exact match (case insensitive)
+    let found = list.find(item => {
+        const itemName = normalizeName(item.name);
+        const exactMatch = itemName === normalizedSearch;
+        if (exactMatch) console.log('Exact match found for', searchName, ':', item.name);
+        return exactMatch;
+    });
+
+    // 2. Try exact match with displayName
+    if (!found && list[0]?.displayName) {
+        found = list.find(item => {
+            const itemDisplayName = normalizeName(item.displayName);
+            const exactMatch = itemDisplayName === normalizedSearch;
+            if (exactMatch) console.log('Exact match found with displayName for', searchName, ':', item.displayName);
+            return exactMatch;
+        });
+    }
+
+    // 3. Try contains match
+    if (!found) {
+        found = list.find(item => {
+            const itemName = normalizeName(item.name);
+            const containsMatch = itemName.includes(normalizedSearch) || normalizedSearch.includes(itemName);
+            if (containsMatch) console.log('Contains match found for', searchName, ':', item.name);
+            return containsMatch;
+        });
+    }
+
+    // 4. Try contains match with displayName
+    if (!found && list[0]?.displayName) {
+        found = list.find(item => {
+            const itemDisplayName = normalizeName(item.displayName);
+            const containsMatch = itemDisplayName.includes(normalizedSearch) || normalizedSearch.includes(itemDisplayName);
+            if (containsMatch) console.log('Contains match found with displayName for', searchName, ':', item.displayName);
+            return containsMatch;
+        });
+    }
+
+    // 5. Special cases for HCM, Hanoi
+    if (!found) {
+        const specialCases = {
+            'ho chi minh': ['ho chi minh', 'hcm', 'tphcm'],
+            'ha noi': ['ha noi', 'hanoi']
+        };
+
+        for (const [key, variants] of Object.entries(specialCases)) {
+            if (variants.some(v => normalizedSearch.includes(v) || v.includes(normalizedSearch))) {
+                found = list.find(item => {
+                    const normalizedItemName = normalizeName(item.name);
+                    return normalizedItemName.includes(key) || key.includes(normalizedItemName);
+                });
+                if (found) {
+                    console.log('Special case match found for', searchName, ':', found.name);
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!found) {
+        console.log('No match found for', searchName);
+    }
+
+    return found;
+};
 
 export default {
     setup() {
@@ -218,17 +321,6 @@ export default {
         const selectedDistrict = ref(null);
         const selectedWard = ref(null);
 
-        // Hàm chuẩn hóa tên để so sánh
-        const normalizeName = (name) => {
-            if (!name) return '';
-            return name.toLowerCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/đ/g, 'd')
-                .replace(/Đ/g, 'D')
-                .trim();
-        };
-
         // Hàm tự động chọn địa chỉ dựa trên dữ liệu từ database
         const autoSelectAddress = async (userAddress) => {
             try {
@@ -236,133 +328,146 @@ export default {
 
                 // 1. Load tất cả tỉnh/thành phố
                 provinces.value = await getProvinces();
+                console.log('Loaded provinces:', provinces.value.length);
 
                 // 2. Tìm và chọn thành phố
-                const cityName = normalizeName(userAddress.city);
+                const cityName = userAddress.city?.trim();
                 console.log('Looking for city:', cityName);
 
-                // Phương pháp 1: Tìm kiếm chính xác
-                let foundCity = provinces.value.find(p =>
-                    normalizeName(p.name) === cityName
-                );
-
-                // Phương pháp 2: Tìm kiếm một phần
-                if (!foundCity) {
-                    foundCity = provinces.value.find(p => {
-                        const provinceName = normalizeName(p.name);
-                        return provinceName.includes(cityName) || cityName.includes(provinceName);
-                    });
+                if (!cityName) {
+                    console.log('No city name provided');
+                    return;
                 }
 
-                // Phương pháp 3: Nếu là Hồ Chí Minh, thử các biến thể
-                if (!foundCity && (
-                    cityName.includes('ho chi minh') ||
-                    cityName.includes('hcm') ||
-                    cityName.includes('tphcm')
-                )) {
-                    foundCity = provinces.value.find(p => {
-                        const name = normalizeName(p.name);
-                        return name.includes('ho chi minh') || name.includes('hcm');
-                    });
-                }
-
-                // Phương pháp 4: Nếu là Hà Nội, thử các biến thể
-                if (!foundCity && (
-                    cityName.includes('ha noi') ||
-                    cityName.includes('hanoi')
-                )) {
-                    foundCity = provinces.value.find(p => {
-                        const name = normalizeName(p.name);
-                        return name.includes('ha noi') || name.includes('hanoi');
-                    });
-                }
+                // Tìm thành phố
+                const foundCity = findMatchingAddress(provinces.value, cityName);
 
                 if (foundCity) {
-                    console.log('Found city:', foundCity);
-                    selectedCity.value = foundCity;
+                    console.log('Found matching city:', foundCity);
 
-                    // 3. Load và chọn quận/huyện
-                    districts.value = await getDistricts(foundCity.code);
-                    const districtName = normalizeName(userAddress.district);
+                    // Set the selected city AFTER loading its districts
+                    const districtList = await getDistricts(foundCity.code);
+                    districts.value = districtList;
+                    console.log('Loaded districts:', districts.value.length);
+
+                    // Now set the city to trigger UI update
+                    selectedCity.value = foundCity;
+                    address.value.city = foundCity.displayName || foundCity.name;
+
+                    // Tìm quận/huyện
+                    const districtName = userAddress.district?.trim();
                     console.log('Looking for district:', districtName);
 
-                    // Tương tự, thử nhiều cách tìm quận/huyện
-                    let foundDistrict = districts.value.find(d =>
-                        normalizeName(d.name) === districtName
-                    );
-
-                    if (!foundDistrict) {
-                        // Tìm quận/huyện có chứa tên
-                        foundDistrict = districts.value.find(d => {
-                            const normalizedDistrict = normalizeName(d.name);
-                            return normalizedDistrict.includes(districtName) || districtName.includes(normalizedDistrict);
-                        });
+                    if (!districtName) {
+                        console.log('No district name provided');
+                        return;
                     }
 
-                    // Loại bỏ tiền tố "quan" hoặc "huyen" nếu có
-                    if (!foundDistrict) {
-                        const searchDistrict = districtName
-                            .replace(/^quan\s+/, '')
-                            .replace(/^huyen\s+/, '');
-
-                        foundDistrict = districts.value.find(d => {
-                            const normalizedDistrict = normalizeName(d.name)
-                                .replace(/^quan\s+/, '')
-                                .replace(/^huyen\s+/, '');
-                            return normalizedDistrict.includes(searchDistrict) || searchDistrict.includes(normalizedDistrict);
-                        });
-                    }
+                    const foundDistrict = findMatchingAddress(districts.value, districtName);
 
                     if (foundDistrict) {
-                        console.log('Found district:', foundDistrict);
-                        selectedDistrict.value = foundDistrict;
+                        console.log('Found matching district:', foundDistrict);
 
-                        // 4. Load và chọn phường/xã
-                        wards.value = await getWards(foundDistrict.code);
-                        const wardName = normalizeName(userAddress.commune);
+                        // Load wards before setting the selected district
+                        const wardList = await getWards(foundDistrict.code);
+                        wards.value = wardList;
+                        console.log('Loaded wards:', wards.value.length);
+
+                        // Now set the district to trigger UI update
+                        selectedDistrict.value = foundDistrict;
+                        address.value.district = foundDistrict.displayName || foundDistrict.name;
+
+                        // Tìm phường/xã
+                        const wardName = userAddress.commune?.trim();
                         console.log('Looking for ward:', wardName);
 
-                        // Tương tự, thử nhiều cách tìm phường/xã
-                        let foundWard = wards.value.find(w =>
-                            normalizeName(w.name) === wardName
-                        );
-
-                        if (!foundWard) {
-                            foundWard = wards.value.find(w => {
-                                const normalizedWard = normalizeName(w.name);
-                                return normalizedWard.includes(wardName) || wardName.includes(normalizedWard);
-                            });
+                        if (!wardName) {
+                            console.log('No ward name provided');
+                            return;
                         }
 
-                        // Loại bỏ tiền tố "phuong" hoặc "xa" nếu có
-                        if (!foundWard) {
-                            const searchWard = wardName
-                                .replace(/^phuong\s+/, '')
-                                .replace(/^xa\s+/, '');
-
-                            foundWard = wards.value.find(w => {
-                                const normalizedWard = normalizeName(w.name)
-                                    .replace(/^phuong\s+/, '')
-                                    .replace(/^xa\s+/, '');
-                                return normalizedWard.includes(searchWard) || searchWard.includes(normalizedWard);
-                            });
-                        }
+                        const foundWard = findMatchingAddress(wards.value, wardName);
 
                         if (foundWard) {
-                            console.log('Found ward:', foundWard);
+                            console.log('Found matching ward:', foundWard);
+
+                            // Set the ward and update the UI
                             selectedWard.value = foundWard;
-                            address.value.commune = foundWard.name;
+                            address.value.commune = foundWard.displayName || foundWard.name;
+
+                            console.log('Address selection complete with values:');
+                            console.log('City:', selectedCity.value?.displayName || selectedCity.value?.name);
+                            console.log('District:', selectedDistrict.value?.displayName || selectedDistrict.value?.name);
+                            console.log('Ward:', selectedWard.value?.displayName || selectedWard.value?.name);
+
+                            // Ensure elements are updated in the DOM
+                            setTimeout(() => {
+                                forceUpdateSelects();
+                            }, 100);
                         } else {
-                            console.log('Ward not found');
+                            console.log('Ward not found:', wardName);
                         }
                     } else {
-                        console.log('District not found');
+                        console.log('District not found:', districtName);
                     }
                 } else {
-                    console.log('City not found');
+                    console.log('City not found:', cityName);
                 }
             } catch (error) {
                 console.error('Error in autoSelectAddress:', error);
+            }
+        };
+
+        // Hàm để cập nhật trực tiếp các dropdown
+        const forceUpdateSelects = () => {
+            try {
+                console.log('Forcing update of select elements');
+
+                // Cập nhật select box tỉnh/thành phố
+                if (selectedCity.value) {
+                    const provinceSelect = document.getElementById('province');
+                    if (provinceSelect) {
+                        const options = provinceSelect.options;
+                        for (let i = 0; i < options.length; i++) {
+                            if (options[i].text.includes(selectedCity.value.name)) {
+                                provinceSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Cập nhật select box quận/huyện
+                if (selectedDistrict.value) {
+                    const districtSelect = document.getElementById('district');
+                    if (districtSelect) {
+                        const options = districtSelect.options;
+                        for (let i = 0; i < options.length; i++) {
+                            if (options[i].text.includes(selectedDistrict.value.name)) {
+                                districtSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Cập nhật select box phường/xã
+                if (selectedWard.value) {
+                    const wardSelect = document.getElementById('ward');
+                    if (wardSelect) {
+                        const options = wardSelect.options;
+                        for (let i = 0; i < options.length; i++) {
+                            if (options[i].text.includes(selectedWard.value.name)) {
+                                wardSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                console.log('Select elements updated');
+            } catch (error) {
+                console.error('Error updating select elements:', error);
             }
         };
 
@@ -378,6 +483,13 @@ export default {
                     const userAddress = response.addresses[0];
                     console.log('User address from database:', userAddress);
 
+                    // Kiểm tra xem địa chỉ có thông tin không
+                    if (!userAddress.city || !userAddress.district || !userAddress.commune) {
+                        console.log('Address data incomplete:', userAddress);
+                        loading.value = false;
+                        return;
+                    }
+
                     // Cập nhật thông tin địa chỉ cơ bản
                     address.value = {
                         streetNumber: userAddress.streetNumber || '',
@@ -388,8 +500,12 @@ export default {
                         addressType: userAddress.addressType || 1
                     };
 
+                    console.log('Updated address object:', address.value);
+
                     // Tự động chọn địa chỉ trong các dropdown
                     await autoSelectAddress(userAddress);
+                } else {
+                    console.log('No address found in user profile');
                 }
             } catch (error) {
                 console.error('Error loading profile:', error);
@@ -409,7 +525,7 @@ export default {
                 if (district) {
                     console.log('Loading wards for district:', district);
                     wards.value = await getWards(district.code);
-                    address.value.district = district.name;
+                    address.value.district = district.displayName || district.name;
                     selectedWard.value = null;
                     address.value.commune = '';
                 } else {
@@ -423,13 +539,13 @@ export default {
             }
         };
 
-        // Sửa lại hàm xử lý thay đổi thành phố
+        // Sửa lại hàm xử lý thay đổi tỉnh/thành phố
         const handleCityChange = async (city) => {
             try {
                 if (city) {
                     console.log('Loading districts for city:', city);
                     districts.value = await getDistricts(city.code);
-                    address.value.city = city.name;
+                    address.value.city = city.displayName || city.name;
                     selectedDistrict.value = null;
                     selectedWard.value = null;
                     address.value.district = '';
@@ -466,9 +582,9 @@ export default {
                     gender: profile.value.gender,
                     addresses: [{
                         streetNumber: address.value.streetNumber,
-                        commune: selectedWard.value.name,
-                        district: selectedDistrict.value.name,
-                        city: selectedCity.value.name,
+                        commune: selectedWard.value.displayName || selectedWard.value.name,
+                        district: selectedDistrict.value.displayName || selectedDistrict.value.name,
+                        city: selectedCity.value.displayName || selectedCity.value.name,
                         country: address.value.country,
                         addressType: parseInt(address.value.addressType)
                     }]
@@ -498,23 +614,49 @@ export default {
 
         // Sửa lại watchers
         watch(selectedCity, async (newCity) => {
+            if (newCity) {
+                console.log('City changed:', newCity);
+            }
             await handleCityChange(newCity);
         });
 
         watch(selectedDistrict, async (newDistrict) => {
+            if (newDistrict) {
+                console.log('District changed:', newDistrict);
+            }
             await handleDistrictChange(newDistrict);
         });
 
         watch(selectedWard, (newWard) => {
             if (newWard) {
-                address.value.commune = newWard.name;
+                console.log('Ward changed:', newWard);
+                address.value.commune = newWard.displayName || newWard.name;
             } else {
                 address.value.commune = '';
             }
         });
 
-        onMounted(() => {
-            loadUserProfile();
+        onMounted(async () => {
+            try {
+                console.log('Profile component mounted');
+                await loadUserProfile();
+
+                // Double-check that UI is updated with selected values
+                console.log('After loading, selected values are:');
+                console.log('City:', selectedCity.value);
+                console.log('District:', selectedDistrict.value);
+                console.log('Ward:', selectedWard.value);
+
+                // Force UI update if needed
+                setTimeout(() => {
+                    if (selectedCity.value && selectedDistrict.value && selectedWard.value) {
+                        console.log('Forcing UI update with selected values');
+                        forceUpdateSelects();
+                    }
+                }, 500);
+            } catch (error) {
+                console.error('Error in onMounted:', error);
+            }
         });
 
         return {
@@ -530,7 +672,8 @@ export default {
             selectedWard,
             handleCityChange,
             handleDistrictChange,
-            updateProfile
+            updateProfile,
+            forceUpdateSelects
         };
     }
 };

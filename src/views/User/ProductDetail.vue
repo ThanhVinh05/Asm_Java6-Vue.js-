@@ -157,8 +157,8 @@
 
 <script>
 import { getProductDetail, getProducts } from '/src/api/product';
-import { addToCart } from '../api/cart';
-import { cartStore } from '../store/cartStore';
+import { addToCart } from '../../api/cart';
+import { cartStore } from '../../store/cartStore';
 import Swal from 'sweetalert2';
 
 export default {

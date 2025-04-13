@@ -88,4 +88,44 @@ export const cancelOrder = async (orderId) => {
         console.error('Error canceling order:', error);
         throw error;
     }
+};
+
+// Update order status
+export const updateOrderStatus = async (orderId, status) => {
+    try {
+        const response = await axiosInstance.put(`/${orderId}/status`, { status });
+        return response.data;
+    } catch (error) {
+        console.error(`Error updating order status to ${status}:`, error);
+        throw error.response?.data?.message || `Không thể cập nhật trạng thái đơn hàng`;
+    }
+};
+
+// Get user information by order ID
+export const getUserByOrder = async (orderId) => {
+    try {
+        const response = await axiosInstance.get(`/userDetails/${orderId}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching user for order ${orderId}:`, error);
+        throw error.response?.data?.message || 'Không thể lấy thông tin người dùng cho đơn hàng';
+    }
+};
+
+// Get orders by user ID (new function)
+export const getOrdersByUserId = async (userId, page = 1, size = 10) => {
+    try {
+        console.log(`Fetching orders for user ID ${userId}, page ${page}, size ${size}`);
+        const response = await axiosInstance.get(`/user/${userId}?page=${page}&size=${size}`);
+        
+        if (response.data && response.data.status === 200) {
+            console.log('Orders data received:', response.data);
+            return response.data.data;
+        }
+        
+        throw new Error('Invalid response format from server');
+    } catch (error) {
+        console.error(`Error fetching orders for user ${userId}:`, error);
+        throw error.response?.data?.message || 'Không thể tải danh sách đơn hàng';
+    }
 }; 

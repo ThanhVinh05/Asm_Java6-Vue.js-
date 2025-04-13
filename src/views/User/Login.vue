@@ -79,9 +79,9 @@
 <script>
 import { login, loginWithGoogle } from "/src/api/user";
 import Swal from 'sweetalert2';
-import { userStore } from '../store/userStore';
+import { userStore } from '../../store/userStore';
 import { logout } from "/src/api/user";
-import { cartStore } from '../store/cartStore';
+import { cartStore } from '../../store/cartStore';
 import { useRouter } from 'vue-router';
 
 export default {

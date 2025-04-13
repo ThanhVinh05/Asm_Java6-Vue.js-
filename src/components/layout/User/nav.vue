@@ -62,9 +62,9 @@
                                     <i class="fas fa-store me-1"></i>Shop
                                 </router-link>
                             </li>
-                            <li class="nav-item">
-                                <router-link class="nav-link" to="/contact">
-                                    <i class="fas fa-envelope me-1"></i>Contact
+                            <li class="nav-item" v-if="isAdmin">
+                                <router-link class="nav-link" to="/admin">
+                                    <i class="fas fa-user-shield me-2"></i>Admin
                                 </router-link>
                             </li>
                         </ul>
@@ -92,41 +92,14 @@
 
                         <!-- User Dropdown -->
                         <div class="dropdown">
-                            <a class="nav-icon position-relative text-decoration-none dropdown-toggle" 
-                               href="#"
-                               id="userDropdown" 
-                               role="button" 
-                               data-bs-toggle="dropdown" 
-                               data-bs-auto-close="true"
-                               aria-expanded="false">
+                            <a class="nav-icon position-relative text-decoration-none dropdown-toggle" href="#"
+                                id="userDropdown" role="button" data-bs-toggle="dropdown" data-bs-auto-close="true"
+                                aria-expanded="false">
                                 <i class="fa fa-fw fa-user text-dark"></i>
                                 <span v-if="isLoggedIn && userName" class="ms-1">{{ userName }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="userDropdown">
                                 <template v-if="isLoggedIn">
-                                    <!-- Admin Menu -->
-                                    <template v-if="isAdmin">
-                                        <li>
-                                            <router-link class="dropdown-item" to="/admin/dashboard">
-                                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                                            </router-link>
-                                        </li>
-                                        <li>
-                                            <router-link class="dropdown-item" to="/admin/users">
-                                                <i class="fas fa-users me-2"></i>Quản lý người dùng
-                                            </router-link>
-                                        </li>
-                                        <li>
-                                            <router-link class="dropdown-item" to="/admin/products">
-                                                <i class="fas fa-box me-2"></i>Quản lý sản phẩm
-                                            </router-link>
-                                        </li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                    </template>
-
-                                    <!-- User Menu -->
                                     <li>
                                         <router-link class="dropdown-item" to="/profile">
                                             <i class="fas fa-user me-2"></i>Tài khoản
@@ -135,6 +108,11 @@
                                     <li>
                                         <router-link class="dropdown-item" to="/orders">
                                             <i class="fas fa-shopping-bag me-2"></i>Đơn hàng
+                                        </router-link>
+                                    </li>
+                                    <li v-if="isAdmin">
+                                        <router-link class="dropdown-item" to="/admin">
+                                            <i class="fas fa-user-shield me-2"></i>Quản lý
                                         </router-link>
                                     </li>
                                     <li>
@@ -170,120 +148,62 @@
 <script>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { logout, getUserProfile } from "/src/api/user";
+import { useStore } from 'vuex';
+import { logout } from "/src/api/user";
 import { tokenService } from '/src/utils/tokenService';
 import { userStore } from '/src/store/userStore';
-import Swal from 'sweetalert2';
 import { cartStore } from '/src/store/cartStore';
+import Swal from 'sweetalert2';
 
 export default {
     setup() {
         const router = useRouter();
+        const store = useStore();
         const searchKeyword = ref("");
         const cartCount = computed(() => cartStore.cartCount.value);
 
-        // Sử dụng userStore thay vì local state
-        const userName = computed(() => userStore.userName.value);
-        const isLoggedIn = computed(() => userStore.isLoggedIn.value);
-
-        const isAdmin = computed(() => {
-            const userInfo = tokenService.getUserInfo();
-            if (!userInfo || !userInfo.role) return false;
-
-            const roles = Array.isArray(userInfo.role) ? userInfo.role : [userInfo.role];
-            return roles.some(role => {
-                if (typeof role === 'string') {
-                    return role === 'ROLE_ADMIN';
-                }
-                return role.authority === 'ROLE_ADMIN';
-            });
-        });
-
-        const getUserNameFromApi = async () => {
-            try {
-                const token = tokenService.getToken();
-                if (!token) {
-                    userStore.clearUserInfo();
-                    return;
-                }
-
-                const userInfo = tokenService.getUserInfo();
-                if (userInfo?.username) {
-                    userStore.setUserInfo(userInfo.username, userInfo.role);
-                }
-
-                const profile = await getUserProfile();
-                if (profile?.username) {
-                    userStore.setUserInfo(profile.username, profile.role);
-                    tokenService.setUserInfo({
-                        ...userInfo,
-                        ...profile
-                    });
-                }
-            } catch (error) {
-                console.error("Lỗi lấy thông tin người dùng:", error);
-                if (error.response?.status === 401) {
-                    tokenService.removeToken();
-                    userStore.clearUserInfo();
-                    router.push('/login');
-                }
-            }
-        };
+        // Computed properties from Vuex store
+        const userName = computed(() => store.getters['auth/currentUser']?.username);
+        const isLoggedIn = computed(() => store.getters['auth/isAuthenticated']);
+        const isAdmin = computed(() => store.getters['auth/isAdmin']);
 
         const handleLogout = async () => {
             try {
-                const result = await Swal.fire({
-                    title: 'Xác nhận đăng xuất?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Đăng xuất',
-                    cancelButtonText: 'Hủy'
+                await logout();
+                await store.dispatch('auth/logout');
+                cartStore.resetCart();
+
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng xuất thành công',
+                    showConfirmButton: false,
+                    timer: 1500
                 });
 
-                if (result.isConfirmed) {
-                    await logout();
-                    userStore.clearUserInfo();
-                    cartStore.resetCart();
-                    router.push('/login');
-                }
+                router.push('/login');
             } catch (error) {
-                console.error("Lỗi đăng xuất:", error);
+                console.error('Logout failed:', error);
                 Swal.fire({
                     icon: 'error',
-                    title: 'Lỗi đăng xuất',
+                    title: 'Đăng xuất thất bại',
                     text: 'Vui lòng thử lại sau'
                 });
             }
         };
 
         const performSearch = () => {
-            if (searchKeyword.value) {
+            if (searchKeyword.value.trim()) {
                 router.push({
-                    name: "shop",
-                    query: { keyword: searchKeyword.value }
+                    name: 'shop',
+                    query: { search: searchKeyword.value.trim() }
                 });
-            } else {
-                router.push({ name: "shop" });
             }
         };
 
-        onMounted(() => {
-            // Initialize dropdowns
-            const dropdownElements = document.querySelectorAll('.dropdown-toggle');
-            dropdownElements.forEach(element => {
-                const dropdown = new window.bootstrap.Dropdown(element, {
-                    autoClose: true
-                });
-            });
-            
-            getUserNameFromApi();
-            cartStore.updateCartCount();
-        });
-
         return {
             searchKeyword,
-            userName,
             cartCount,
+            userName,
             isLoggedIn,
             isAdmin,
             handleLogout,

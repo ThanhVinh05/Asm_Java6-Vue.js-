@@ -1,12 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { getFeaturedProducts } from '/src/api/product';
-import Banner from '/src/components/layout/banner.vue';
-import { addToCart as apiAddToCart } from '../api/cart';
-import { cartStore } from '../store/cartStore';
+import Banner from '/src/components/layout/User/banner.vue';
+import { addToCart as apiAddToCart } from '../../api/cart';
+import { cartStore } from '../../store/cartStore';
 import Swal from 'sweetalert2';
 import { useRouter } from 'vue-router';
-import { userStore } from '../store/userStore';
+import { userStore } from '../../store/userStore';
 
 const featuredProducts = ref([]);
 const router = useRouter();

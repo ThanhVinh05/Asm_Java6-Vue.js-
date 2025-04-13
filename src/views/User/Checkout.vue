@@ -1,260 +1,260 @@
 <template>
     <div class="checkout-container">
         <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-12">
-                <h1 class="display-5 fw-bold mb-4">
-                    <i class="fas fa-credit-card text-success me-3"></i>Thanh toán
-                </h1>
-            </div>
-        </div>
-
-        <!-- Hiển thị khi giỏ hàng trống -->
-        <div v-if="selectedItems.length === 0" class="row justify-content-center">
-            <div class="col-md-8 text-center py-5">
-                <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted mb-4">Bạn chưa chọn sản phẩm nào để thanh toán</h5>
-                <router-link to="/cart" class="btn btn-success">
-                    <i class="fas fa-shopping-cart me-2"></i>Quay lại giỏ hàng
-                </router-link>
-            </div>
-        </div>
-
-        <!-- Hiển thị khi giỏ hàng có sản phẩm -->
-        <div v-else class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body p-4">
-                        <h5 class="card-title mb-4">
-                            <i class="fas fa-shipping-fast text-success me-2"></i>
-                            Thông tin giao hàng
-                        </h5>
-
-                        <div v-if="userInfo" class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="mb-0">Thông tin người nhận</h6>
-                                <button class="btn btn-outline-success btn-sm" @click="showModal" data-bs-toggle="modal"
-                                    data-bs-target="#changeAddressModal">
-                                    <i class="fas fa-edit me-2"></i>Đổi địa chỉ
-                                </button>
-                            </div>
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <p class="mb-1"><strong>Họ và tên:</strong> {{ userInfo.username }}</p>
-                                    <p class="mb-1"><strong>Email:</strong> {{ userInfo.email }}</p>
-                                    <p class="mb-1"><strong>Số điện thoại:</strong> {{ userInfo.phone || 'Chưa cập nhật'
-                                        }}</p>
-                                    <p class="mb-0">
-                                        <strong>Địa chỉ:</strong>
-                                        <span v-if="defaultAddress">
-                                            {{ defaultAddress.streetNumber }}, {{ defaultAddress.commune }},
-                                            {{ defaultAddress.district }}, {{ defaultAddress.city }}
-                                        </span>
-                                        <span v-else class="text-danger">Chưa có địa chỉ</span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div v-else class="d-flex justify-content-center mb-4">
-                            <div class="spinner-border text-success" role="status">
-                                <span class="visually-hidden">Đang tải...</span>
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <h5 class="mb-3">Phương thức thanh toán</h5>
-                        <div class="form-check mb-2">
-                            <input type="radio" class="form-check-input" id="cod" value="COD"
-                                v-model="form.paymentMethod" required>
-                            <label class="form-check-label" for="cod">
-                                <i class="fas fa-money-bill-wave text-success me-2"></i>
-                                Thanh toán khi nhận hàng (COD)
-                            </label>
-                        </div>
-                        <div class="form-check mb-2">
-                            <input type="radio" class="form-check-input" id="bank" value="BANK"
-                                v-model="form.paymentMethod" required>
-                            <label class="form-check-label" for="bank">
-                                <i class="fas fa-university text-success me-2"></i>
-                                Chuyển khoản ngân hàng
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input type="radio" class="form-check-input" id="momo" value="MOMO"
-                                v-model="form.paymentMethod" required>
-                            <label class="form-check-label" for="momo">
-                                <i class="fas fa-wallet text-success me-2"></i>
-                                Ví MoMo
-                            </label>
-                        </div>
-
-                        <div class="mt-3">
-                            <label for="note" class="form-label">Ghi chú (không bắt buộc)</label>
-                            <textarea class="form-control" id="note" v-model="form.note" rows="2"></textarea>
-                        </div>
-
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="button" class="btn btn-success btn-lg"
-                                :disabled="isLoading || !defaultAddress || !userInfo" @click="placeOrder">
-                                <span v-if="isLoading">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-hidden="true"></span>
-                                    Đang xử lý...
-                                </span>
-                                <span v-else>
-                                    <i class="fas fa-lock me-2"></i>Đặt hàng
-                                </span>
-                            </button>
-                            <router-link to="/cart" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Quay lại giỏ hàng
-                            </router-link>
-                        </div>
-                    </div>
+            <div class="row justify-content-center">
+                <div class="col-12">
+                    <h1 class="display-5 fw-bold mb-4">
+                        <i class="fas fa-credit-card text-success me-3"></i>Thanh toán
+                    </h1>
                 </div>
             </div>
 
-            <div class="col-lg-4">
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title mb-4">Đơn hàng của bạn</h5>
-                        <div class="order-items">
-                            <div v-for="item in selectedItems" :key="item.productId"
-                                class="d-flex justify-content-between align-items-center mb-3">
-                                <div class="d-flex align-items-center">
-                                    <img :src="getFirstImageUrl(item.product.image)" class="img-fluid rounded me-2"
-                                        style="width: 50px; height: 50px; object-fit: cover;"
-                                        :alt="item.product.productName">
-                                    <div>
-                                        <h6 class="mb-0">{{ item.product.productName }}</h6>
-                                        <small class="text-muted">Số lượng: {{ item.quantity }}</small>
-                                    </div>
-                                </div>
-                                <span>${{ (item.product.productPrice * item.quantity).toFixed(2) }}</span>
-                            </div>
-                        </div>
-
-                        <hr>
-
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Tạm tính:</span>
-                            <span>${{ checkoutSubtotal.toFixed(2) }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Phí vận chuyển:</span>
-                            <span>${{ shippingFee.toFixed(2) }}</span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between mb-0">
-                            <strong>Tổng cộng:</strong>
-                            <strong class="text-success">${{ checkoutTotal.toFixed(2) }}</strong>
-                        </div>
-                    </div>
+            <!-- Hiển thị khi giỏ hàng trống -->
+            <div v-if="selectedItems.length === 0" class="row justify-content-center">
+                <div class="col-md-8 text-center py-5">
+                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted mb-4">Bạn chưa chọn sản phẩm nào để thanh toán</h5>
+                    <router-link to="/cart" class="btn btn-success">
+                        <i class="fas fa-shopping-cart me-2"></i>Quay lại giỏ hàng
+                    </router-link>
                 </div>
             </div>
-        </div>
 
-        <div class="modal fade" id="changeAddressModal" tabindex="-1" aria-labelledby="changeAddressModalLabel"
-            aria-hidden="true" ref="addressModal">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="changeAddressModalLabel">Thay đổi địa chỉ</h5>
-                        <button type="button" class="btn-close" @click="hideModal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form @submit.prevent="updateAddress">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label for="province" class="form-label">Tỉnh/Thành phố</label>
-                                    <select class="form-select" id="province" v-model="addressForm.province"
-                                        :class="{ 'is-invalid': addressErrors.province }" required
-                                        @change="onProvinceChange">
-                                        <option value="">Chọn tỉnh/thành phố</option>
-                                        <option v-for="province in provinces" :key="province.code"
-                                            :value="province.code">
-                                            {{ province.name }}
-                                        </option>
-                                    </select>
-                                    <div class="invalid-feedback" v-if="addressErrors.province">
-                                        {{ addressErrors.province }}
+            <!-- Hiển thị khi giỏ hàng có sản phẩm -->
+            <div v-else class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <h5 class="card-title mb-4">
+                                <i class="fas fa-shipping-fast text-success me-2"></i>
+                                Thông tin giao hàng
+                            </h5>
+
+                            <div v-if="userInfo" class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0">Thông tin người nhận</h6>
+                                    <button class="btn btn-outline-success btn-sm" @click="showModal"
+                                        data-bs-toggle="modal" data-bs-target="#changeAddressModal">
+                                        <i class="fas fa-edit me-2"></i>Đổi địa chỉ
+                                    </button>
+                                </div>
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <p class="mb-1"><strong>Họ và tên:</strong> {{ userInfo.username }}</p>
+                                        <p class="mb-1"><strong>Email:</strong> {{ userInfo.email }}</p>
+                                        <p class="mb-1"><strong>Số điện thoại:</strong>
+                                            {{ userInfo.phone || 'Chưa cập nhật' }}</p>
+                                        <p class="mb-0">
+                                            <strong>Địa chỉ:</strong>
+                                            <span v-if="defaultAddress">
+                                                {{ defaultAddress.streetNumber }}, {{ defaultAddress.commune }},
+                                                {{ defaultAddress.district }}, {{ defaultAddress.city }}
+                                            </span>
+                                            <span v-else class="text-danger">Chưa có địa chỉ</span>
+                                        </p>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="district" class="form-label">Quận/Huyện</label>
-                                    <select class="form-select" id="district" v-model="addressForm.district"
-                                        :class="{ 'is-invalid': addressErrors.district }" required
-                                        @change="onDistrictChange" :disabled="!addressForm.province">
-                                        <option value="">Chọn quận/huyện</option>
-                                        <option v-for="district in districts" :key="district.code"
-                                            :value="district.code">
-                                            {{ district.name }}
-                                        </option>
-                                    </select>
-                                    <div class="invalid-feedback" v-if="addressErrors.district">
-                                        {{ addressErrors.district }}
-                                    </div>
+                            </div>
+                            <div v-else class="d-flex justify-content-center mb-4">
+                                <div class="spinner-border text-success" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="ward" class="form-label">Phường/Xã</label>
-                                    <select class="form-select" id="ward" v-model="addressForm.ward"
-                                        :class="{ 'is-invalid': addressErrors.ward }" required
-                                        :disabled="!addressForm.district">
-                                        <option value="">Chọn phường/xã</option>
-                                        <option v-for="ward in wards" :key="ward.code" :value="ward.code">
-                                            {{ ward.name }}
-                                        </option>
-                                    </select>
-                                    <div class="invalid-feedback" v-if="addressErrors.ward">
-                                        {{ addressErrors.ward }}
-                                    </div>
-                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <h5 class="mb-3">Phương thức thanh toán</h5>
+                            <div class="form-check mb-2">
+                                <input type="radio" class="form-check-input" id="cod" value="COD"
+                                    v-model="form.paymentMethod" required>
+                                <label class="form-check-label" for="cod">
+                                    <i class="fas fa-money-bill-wave text-success me-2"></i>
+                                    Thanh toán khi nhận hàng (COD)
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="radio" class="form-check-input" id="bank" value="BANK"
+                                    v-model="form.paymentMethod" required>
+                                <label class="form-check-label" for="bank">
+                                    <i class="fas fa-university text-success me-2"></i>
+                                    Chuyển khoản ngân hàng
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" id="momo" value="MOMO"
+                                    v-model="form.paymentMethod" required>
+                                <label class="form-check-label" for="momo">
+                                    <i class="fas fa-wallet text-success me-2"></i>
+                                    Ví MoMo
+                                </label>
                             </div>
 
                             <div class="mt-3">
-                                <label for="streetNumber" class="form-label">Số nhà, tên đường</label>
-                                <input type="text" class="form-control" id="streetNumber"
-                                    v-model="addressForm.streetNumber"
-                                    :class="{ 'is-invalid': addressErrors.streetNumber }" required>
-                                <div class="invalid-feedback" v-if="addressErrors.streetNumber">
-                                    {{ addressErrors.streetNumber }}
+                                <label for="note" class="form-label">Ghi chú (không bắt buộc)</label>
+                                <textarea class="form-control" id="note" v-model="form.note" rows="2"></textarea>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="button" class="btn btn-success btn-lg"
+                                    :disabled="isLoading || !defaultAddress || !userInfo" @click="placeOrder">
+                                    <span v-if="isLoading">
+                                        <span class="spinner-border spinner-border-sm" role="status"
+                                            aria-hidden="true"></span>
+                                        Đang xử lý...
+                                    </span>
+                                    <span v-else>
+                                        <i class="fas fa-lock me-2"></i>Đặt hàng
+                                    </span>
+                                </button>
+                                <router-link to="/cart" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Quay lại giỏ hàng
+                                </router-link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">Đơn hàng của bạn</h5>
+                            <div class="order-items">
+                                <div v-for="item in selectedItems" :key="item.productId"
+                                    class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <img :src="getFirstImageUrl(item.product.image)" class="img-fluid rounded me-2"
+                                            style="width: 50px; height: 50px; object-fit: cover;"
+                                            :alt="item.product.productName">
+                                        <div>
+                                            <h6 class="mb-0">{{ item.product.productName }}</h6>
+                                            <small class="text-muted">Số lượng: {{ item.quantity }}</small>
+                                        </div>
+                                    </div>
+                                    <span>${{ (item.product.productPrice * item.quantity).toFixed(2) }}</span>
                                 </div>
                             </div>
 
-                            <div class="mt-4">
-                                <button type="submit" class="btn btn-success" :disabled="isUpdatingAddress">
-                                    <span v-if="isUpdatingAddress">
-                                        <span class="spinner-border spinner-border-sm" role="status"
-                                            aria-hidden="true"></span>
-                                        Đang cập nhật...
-                                    </span>
-                                    <span v-else>
-                                        <i class="fas fa-save me-2"></i>Lưu địa chỉ
-                                    </span>
-                                </button>
-                                <button type="button" class="btn btn-secondary ms-2" @click="hideModal">
-                                    Hủy
-                                </button>
+                            <hr>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Tạm tính:</span>
+                                <span>${{ checkoutSubtotal.toFixed(2) }}</span>
                             </div>
-                        </form>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Phí vận chuyển:</span>
+                                <span>${{ shippingFee.toFixed(2) }}</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-0">
+                                <strong>Tổng cộng:</strong>
+                                <strong class="text-success">${{ checkoutTotal.toFixed(2) }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="changeAddressModal" tabindex="-1" aria-labelledby="changeAddressModalLabel"
+                aria-hidden="true" ref="addressModal">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="changeAddressModalLabel">Thay đổi địa chỉ</h5>
+                            <button type="button" class="btn-close" @click="hideModal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="updateAddress">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="province" class="form-label">Tỉnh/Thành phố</label>
+                                        <select class="form-select" id="province" v-model="addressForm.province"
+                                            :class="{ 'is-invalid': addressErrors.province }" required
+                                            @change="onProvinceChange">
+                                            <option value="">Chọn tỉnh/thành phố</option>
+                                            <option v-for="province in provinces" :key="province.code"
+                                                :value="province.code">
+                                                {{ province.displayName || province.name }}
+                                            </option>
+                                        </select>
+                                        <div class="invalid-feedback" v-if="addressErrors.province">
+                                            {{ addressErrors.province }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="district" class="form-label">Quận/Huyện</label>
+                                        <select class="form-select" id="district" v-model="addressForm.district"
+                                            :class="{ 'is-invalid': addressErrors.district }" required
+                                            @change="onDistrictChange" :disabled="!addressForm.province">
+                                            <option value="">Chọn quận/huyện</option>
+                                            <option v-for="district in districts" :key="district.code"
+                                                :value="district.code">
+                                                {{ district.displayName || district.name }}
+                                            </option>
+                                        </select>
+                                        <div class="invalid-feedback" v-if="addressErrors.district">
+                                            {{ addressErrors.district }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="ward" class="form-label">Phường/Xã</label>
+                                        <select class="form-select" id="ward" v-model="addressForm.ward"
+                                            :class="{ 'is-invalid': addressErrors.ward }" required
+                                            :disabled="!addressForm.district">
+                                            <option value="">Chọn phường/xã</option>
+                                            <option v-for="ward in wards" :key="ward.code" :value="ward.code">
+                                                {{ ward.displayName || ward.name }}
+                                            </option>
+                                        </select>
+                                        <div class="invalid-feedback" v-if="addressErrors.ward">
+                                            {{ addressErrors.ward }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <label for="streetNumber" class="form-label">Số nhà, tên đường</label>
+                                    <input type="text" class="form-control" id="streetNumber"
+                                        v-model="addressForm.streetNumber"
+                                        :class="{ 'is-invalid': addressErrors.streetNumber }" required>
+                                    <div class="invalid-feedback" v-if="addressErrors.streetNumber">
+                                        {{ addressErrors.streetNumber }}
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <button type="submit" class="btn btn-success" :disabled="isUpdatingAddress">
+                                        <span v-if="isUpdatingAddress">
+                                            <span class="spinner-border spinner-border-sm" role="status"
+                                                aria-hidden="true"></span>
+                                            Đang cập nhật...
+                                        </span>
+                                        <span v-else>
+                                            <i class="fas fa-save me-2"></i>Lưu địa chỉ
+                                        </span>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary ms-2" @click="hideModal">
+                                        Hủy
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
     </div>
 </template>
 
 <script>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { getCartItems, removeFromCart } from '../api/cart';
-import { createOrder } from '../api/order';
-import { getUserProfile } from '../api/user';
-import { getProvinces, getDistricts, getWards, updateUserAddress } from '../api/address';
+import { getCartItems, removeFromCart } from '../../api/cart';
+import { createOrder } from '../../api/order';
+import { getUserProfile } from '../../api/user';
+import { getProvinces, getDistricts, getWards, updateUserAddress } from '../../api/address';
 import Swal from 'sweetalert2';
 import axios from 'axios';
-import { cartStore } from '../store/cartStore';
+import { cartStore } from '../../store/cartStore';
 
 export default {
     setup() {
@@ -422,33 +422,17 @@ export default {
                     // Thêm timeout để tránh request quá nhanh
                     await new Promise(resolve => setTimeout(resolve, 300));
 
-                    // Gọi API trực tiếp thay vì thông qua service nếu có vấn đề
-                    try {
-                        wards.value = await getWards(addressForm.value.district);
-                    } catch (err) {
-                        console.error("Lỗi khi gọi API qua service:", err);
-                        // Backup: Thử gọi API trực tiếp
-                        const response = await axios.get(`https://provinces.open-api.vn/api/d/${addressForm.value.district}?depth=2`);
-                        if (response.data && response.data.wards) {
-                            wards.value = response.data.wards;
-                        } else {
-                            throw new Error("Không thể tải dữ liệu phường/xã");
-                        }
-                    }
-
+                    wards.value = await getWards(addressForm.value.district);
                     console.log('Đã tải được', wards.value.length, 'phường/xã');
-                } catch (error) {
-                    console.error('Error loading wards:', error);
-                    wards.value = [];
-                    addressForm.value.ward = '';
-
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Thông báo',
-                        text: 'Không thể tải danh sách phường/xã. Vui lòng thử lại sau.',
-                        confirmButtonText: 'Đồng ý',
-                        timer: 3000
-                    });
+                } catch (err) {
+                    console.error("Lỗi khi gọi API qua service:", err);
+                    // Backup: Thử gọi API trực tiếp
+                    const response = await axios.get(`https://vn-public-apis.fpo.vn/wards/getByDistrict?districtCode=${addressForm.value.district}&limit=-1`);
+                    if (response.data && response.data.data && response.data.data.data) {
+                        wards.value = response.data.data.data;
+                    } else {
+                        throw new Error("Không thể tải dữ liệu phường/xã");
+                    }
                 }
             } else {
                 wards.value = [];
@@ -503,9 +487,9 @@ export default {
                 // Tạo mảng địa chỉ với chỉ 1 địa chỉ duy nhất
                 const addresses = [{
                     streetNumber: addressForm.value.streetNumber.trim(),
-                    commune: selectedWard.name,
-                    district: selectedDistrict.name,
-                    city: selectedProvince.name,
+                    commune: selectedWard.displayName || selectedWard.name,
+                    district: selectedDistrict.displayName || selectedDistrict.name,
+                    city: selectedProvince.displayName || selectedProvince.name,
                     country: 'Việt Nam',
                     addressType: 1
                 }];
