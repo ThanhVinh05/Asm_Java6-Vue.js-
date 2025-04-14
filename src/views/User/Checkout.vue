@@ -260,7 +260,7 @@ export default {
     setup() {
         const router = useRouter();
         const selectedItems = ref([]);
-        const shippingFee = ref(5.00);
+        const shippingFee = ref(10.00);
         const isLoading = ref(false);
         const isUpdatingAddress = ref(false);
         const showChangeAddressModal = ref(false);

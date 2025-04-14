@@ -12,7 +12,7 @@ export const axiosInstance = axios.create({
     timeout: 5000, // Timeout sau 5 giây
 });
 
-// Add request interceptor
+// Add request interceptor với token
 axiosInstance.interceptors.request.use(
     config => {
         const token = tokenService.getToken();

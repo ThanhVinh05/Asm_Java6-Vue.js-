@@ -222,6 +222,31 @@ const formatAddress = (address) => {
     return parts.join(', ');
 };
 
+// Format DateTime
+const formatDateTime = (dateString) => {
+    if (!dateString) return "Không có thông tin";
+    const options = {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    };
+    return new Date(dateString).toLocaleString('vi-VN', options);
+};
+
+// Format Payment Method
+const formatPaymentMethod = (method) => {
+    switch (method) {
+        case 'COD': return 'Thanh toán khi nhận hàng';
+        case 'BANK': return 'Chuyển khoản ngân hàng';
+        case 'MOMO': return 'Ví Momo';
+        case 'BANK_TRANSFER': return 'Chuyển khoản ngân hàng';
+        default: return method || 'Không có thông tin';
+    }
+};
+
 onMounted(() => {
     fetchOrderDetails();
 });
@@ -356,17 +381,17 @@ onMounted(() => {
                         <div class="mb-3">
                             <strong>Ngày đặt hàng:</strong>
                             <p v-if="orderData?.createdAt">
-                                {{ new Date(orderData.createdAt).toLocaleString() }}
+                                {{ formatDateTime(orderData.createdAt) }}
                             </p>
                             <p v-else-if="orderDetails[0]?.order?.createdAt">
-                                {{ new Date(orderDetails[0].order.createdAt).toLocaleString() }}
+                                {{ formatDateTime(orderDetails[0].order.createdAt) }}
                             </p>
                             <p v-else>Không có thông tin</p>
                         </div>
                         <div class="mb-3">
                             <strong>Phương thức thanh toán:</strong>
-                            <p>{{ orderData?.paymentMethod || orderDetails[0]?.order?.paymentMethod
-                                || "Không có thông tin" }}</p>
+                            <p>{{ formatPaymentMethod(orderData?.paymentMethod || orderDetails[0]?.order?.paymentMethod)
+                            }}</p>
                         </div>
                         <div class="mb-3">
                             <strong>Ghi chú:</strong>

@@ -2,11 +2,12 @@
 import { ref, onMounted, computed } from 'vue';
 import Chart from 'chart.js/auto';
 import {
-    getMockDashboardStats,
-    getMockRevenueStats,
-    getMockRecentOrders,
-    getMockTopProducts
+    getDashboardStats,
+    getRevenueStats,
+    getRecentOrders,
+    getTopProducts
 } from '../../api/dashboard';
+import { useRouter } from 'vue-router';
 
 // State
 const stats = ref({
@@ -24,6 +25,15 @@ const loading = ref({
     orders: true,
     products: true
 });
+const error = ref({
+    stats: null,
+    revenue: null,
+    orders: null,
+    products: null
+});
+const recentOrdersPeriod = ref('week');
+
+const router = useRouter();
 
 // Thời gian
 const currentYear = new Date().getFullYear();
@@ -54,7 +64,7 @@ const formatDate = (dateString) => {
 // Status badge
 const getStatusBadge = (status) => {
     const statusMap = {
-        'PENDING': 'bg-warning',
+        'PENDING': 'bg-warning text-dark',
         'CONFIRMED': 'bg-info',
         'SHIPPING': 'bg-primary',
         'DELIVERED': 'bg-success',
@@ -64,14 +74,32 @@ const getStatusBadge = (status) => {
     return statusMap[status] || 'bg-secondary';
 };
 
+const formatStatus = (status) => {
+    const statusMap = {
+        'PENDING': 'Chờ xác nhận',
+        'CONFIRMED': 'Đã xác nhận',
+        'SHIPPING': 'Đang giao hàng',
+        'DELIVERED': 'Đã giao hàng',
+        'COMPLETED': 'Hoàn thành',
+        'CANCELLED': 'Đã hủy'
+    };
+    return statusMap[status] || status;
+}
+
 // Load dashboard stats
 const loadDashboardStats = async () => {
     loading.value.stats = true;
+    error.value.stats = null;
     try {
-        const response = await getMockDashboardStats();
-        stats.value = response.data;
-    } catch (error) {
-        console.error('Error loading dashboard stats:', error);
+        const response = await getDashboardStats();
+        if (response && response.data) {
+            stats.value = response.data;
+        } else {
+            throw new Error('Invalid stats data received');
+        }
+    } catch (err) {
+        console.error('Error loading dashboard stats:', err);
+        error.value.stats = err.message || 'Failed to load statistics.';
     } finally {
         loading.value.stats = false;
     }
@@ -80,18 +108,15 @@ const loadDashboardStats = async () => {
 // Load revenue data
 const loadRevenueData = async () => {
     loading.value.revenue = true;
+    error.value.revenue = null;
     try {
-        const params = {
-            period: selectedPeriod.value,
-            year: selectedYear.value
-        };
+        const response = await getRevenueStats(selectedPeriod.value, selectedYear.value, selectedMonth.value);
 
-        if (selectedPeriod.value === 'month') {
-            params.month = selectedMonth.value;
+        if (response && response.data) {
+            revenueData.value = response.data;
+        } else {
+            throw new Error('Invalid revenue data received');
         }
-
-        const response = await getMockRevenueStats(selectedPeriod.value);
-        revenueData.value = response.data;
 
         if (revenueChart) {
             revenueChart.destroy();
@@ -100,8 +125,9 @@ const loadRevenueData = async () => {
         if (revenueChartRef.value) {
             renderRevenueChart();
         }
-    } catch (error) {
-        console.error('Error loading revenue data:', error);
+    } catch (err) {
+        console.error('Error loading revenue data:', err);
+        error.value.revenue = err.message || 'Failed to load revenue chart data.';
     } finally {
         loading.value.revenue = false;
     }
@@ -110,11 +136,17 @@ const loadRevenueData = async () => {
 // Load recent orders
 const loadRecentOrders = async () => {
     loading.value.orders = true;
+    error.value.orders = null;
     try {
-        const response = await getMockRecentOrders();
-        recentOrders.value = response.data;
-    } catch (error) {
-        console.error('Error loading recent orders:', error);
+        const response = await getRecentOrders();
+        if (response && response.data) {
+            recentOrders.value = response.data;
+        } else {
+            throw new Error('Invalid recent orders data received');
+        }
+    } catch (err) {
+        console.error('Error loading recent orders:', err);
+        error.value.orders = err.message || 'Failed to load recent orders.';
     } finally {
         loading.value.orders = false;
     }
@@ -123,11 +155,17 @@ const loadRecentOrders = async () => {
 // Load top products
 const loadTopProducts = async () => {
     loading.value.products = true;
+    error.value.products = null;
     try {
-        const response = await getMockTopProducts();
-        topProducts.value = response.data;
-    } catch (error) {
-        console.error('Error loading top products:', error);
+        const response = await getTopProducts();
+        if (response && response.data) {
+            topProducts.value = response.data;
+        } else {
+            throw new Error('Invalid top products data received');
+        }
+    } catch (err) {
+        console.error('Error loading top products:', err);
+        error.value.products = err.message || 'Failed to load top products.';
     } finally {
         loading.value.products = false;
     }
@@ -135,7 +173,7 @@ const loadTopProducts = async () => {
 
 // Render revenue chart
 const renderRevenueChart = () => {
-    if (!revenueData.value || !revenueChartRef.value) return;
+    if (!revenueData.value || !revenueChartRef.value || !revenueData.value.labels || !revenueData.value.datasets) return;
 
     const ctx = revenueChartRef.value.getContext('2d');
 
@@ -144,8 +182,8 @@ const renderRevenueChart = () => {
         data: {
             labels: revenueData.value.labels,
             datasets: [{
-                label: revenueData.value.datasets[0].label,
-                data: revenueData.value.datasets[0].data,
+                label: revenueData.value.datasets[0]?.label || 'Doanh thu',
+                data: revenueData.value.datasets[0]?.data || [],
                 borderColor: '#198754',
                 backgroundColor: 'rgba(25, 135, 84, 0.1)',
                 borderWidth: 2,
@@ -190,6 +228,34 @@ const handlePeriodChange = () => {
     }
     loadRevenueData();
 };
+
+// Navigate to order details
+const goToOrderDetail = (orderId) => {
+    router.push(`/admin/orders/${orderId}`);
+};
+
+// Filtered Recent Orders
+const filteredRecentOrders = computed(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    return recentOrders.value.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        switch (recentOrdersPeriod.value) {
+            case 'day':
+                return orderDate >= today && orderDate < new Date(today.getTime() + oneDay);
+            case 'week':
+                const sevenDaysAgo = new Date(today.getTime() - 6 * oneDay);
+                return orderDate >= sevenDaysAgo;
+            case 'month':
+                const thirtyDaysAgo = new Date(today.getTime() - 29 * oneDay);
+                return orderDate >= thirtyDaysAgo;
+            default:
+                return true; // Should not happen, but return all if invalid period
+        }
+    }).slice(0, 5); // Limit display to 5 after filtering
+});
 
 // On mount
 onMounted(() => {
@@ -410,13 +476,19 @@ const totalRevenue = computed(() => {
                         <h6 class="m-0 font-weight-bold text-primary">Recent Orders</h6>
                         <div class="dropdown no-arrow">
                             <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <button type="button" class="btn btn-sm"
+                                    :class="recentOrdersPeriod === 'day' ? 'btn-primary' : 'btn-outline-secondary'"
+                                    @click="recentOrdersPeriod = 'day'">
                                     <i class="fas fa-calendar-day me-1"></i> Day
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <button type="button" class="btn btn-sm"
+                                    :class="recentOrdersPeriod === 'week' ? 'btn-primary' : 'btn-outline-secondary'"
+                                    @click="recentOrdersPeriod = 'week'">
                                     <i class="fas fa-calendar-week me-1"></i> Week
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <button type="button" class="btn btn-sm"
+                                    :class="recentOrdersPeriod === 'month' ? 'btn-primary' : 'btn-outline-secondary'"
+                                    @click="recentOrdersPeriod = 'month'">
                                     <i class="fas fa-calendar-alt me-1"></i> Month
                                 </button>
                             </div>
@@ -441,18 +513,23 @@ const totalRevenue = computed(() => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="order in recentOrders" :key="order.id">
+                                    <tr v-if="filteredRecentOrders.length === 0">
+                                        <td colspan="6" class="text-center text-muted">No orders found for this period.
+                                        </td>
+                                    </tr>
+                                    <tr v-else v-for="order in filteredRecentOrders" :key="order.id">
                                         <td>#{{ order.id }}</td>
                                         <td>{{ order.customerName }}</td>
                                         <td>{{ formatDate(order.createdAt) }}</td>
                                         <td>
                                             <span :class="'badge ' + getStatusBadge(order.status)">
-                                                {{ order.status }}
+                                                {{ formatStatus(order.status) }}
                                             </span>
                                         </td>
                                         <td>{{ formatCurrency(order.total) }}</td>
                                         <td>
-                                            <button class="btn btn-sm btn-info">
+                                            <button class="btn btn-sm btn-info text-white"
+                                                @click="goToOrderDetail(order.id)">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         </td>
@@ -525,5 +602,20 @@ const totalRevenue = computed(() => {
 .table td,
 .table th {
     vertical-align: middle;
+}
+
+.btn-group .btn-primary {
+    color: #fff;
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.btn-group .btn-outline-secondary {
+    color: #858796;
+    border-color: #d1d3e2;
+}
+
+.btn-group .btn-outline-secondary:hover {
+    background-color: #f8f9fc;
 }
 </style>

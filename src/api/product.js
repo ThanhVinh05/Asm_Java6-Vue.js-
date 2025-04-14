@@ -32,15 +32,25 @@ export const getFeaturedProducts = async () => {
 };
 
 // Trang Shop
-export const getProducts = async (page = 1, size = 6, categoryId = null, keyword = null) => {
+export const getProducts = async (page = 1, size = 6, categoryId = null, keyword = null, minPrice = null, maxPrice = null, sort = null) => {
     try {
         let url = `${API_URL}/list?page=${page}&size=${size}`;
         if (categoryId) {
             url += `&categoryId=${categoryId}`;
         }
         if (keyword) {
-            url += `&keyword=${keyword}`; // Thêm tham số keyword
+            url += `&keyword=${encodeURIComponent(keyword)}`;
         }
+        if (minPrice !== null) {
+            url += `&minPrice=${minPrice}`;
+        }
+        if (maxPrice !== null) {
+            url += `&maxPrice=${maxPrice}`;
+        }
+        if (sort) {
+            url += `&sort=${sort}`;
+        }
+        console.log(`Fetching products from URL: ${url}`);
         const response = await axios.get(url);
         return response.data.data; // Trả về toàn bộ dữ liệu phân trang
     } catch (error) {
@@ -154,5 +164,46 @@ export const getProductsByCategory = async (categoryId) => {
     } catch (error) {
         console.error(`Error fetching products for category ${categoryId}:`, error);
         return [];
+    }
+};
+
+// Update product stock quantity when order is shipped
+export const updateProductStock = async (productId, quantity) => {
+    try {
+        // First, get the current product data
+        const productResponse = await axios.get(`${API_URL}/${productId}`);
+        if (!productResponse.data || !productResponse.data.data) {
+            throw new Error('Không thể lấy thông tin sản phẩm');
+        }
+        
+        const productData = productResponse.data.data;
+        
+        // Calculate new quantity (ensure it doesn't go below 0)
+        const currentStock = productData.stockQuantity || 0;
+        const newStock = Math.max(0, currentStock - quantity);
+        
+        console.log(`Updating product ${productId} stock: ${currentStock} -> ${newStock}`);
+        
+        // Update the product with new stock quantity
+        const updateData = {
+            ...productData,
+            stockQuantity: newStock
+        };
+        
+        const response = await axios.put(`${API_URL}/upd`, updateData);
+        
+        if (response.data && response.data.status === 202) {
+            return {
+                success: true,
+                previousStock: currentStock,
+                newStock: newStock,
+                productName: productData.productName
+            };
+        } else {
+            throw new Error(response.data.message || 'Không thể cập nhật số lượng sản phẩm');
+        }
+    } catch (error) {
+        console.error(`Error updating product ${productId} stock:`, error);
+        throw error.response?.data?.message || 'Không thể cập nhật số lượng sản phẩm trong kho';
     }
 };

@@ -21,11 +21,20 @@
                                         <i class="fas fa-tags me-2"></i>Categories
                                     </h6>
                                     <div class="category-list">
+                                        <!-- Radio button for selecting ALL categories -->
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="categoryFilter"
+                                                id="categoryAll" :value="null" v-model="selectedCategory"
+                                                @change="applyFilters">
+                                            <label class="form-check-label" for="categoryAll">
+                                                Tất cả
+                                            </label>
+                                        </div>
+                                        <!-- Radio buttons for each category -->
                                         <div v-for="category in categories" :key="category.id" class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox"
-                                                :id="'category' + category.id"
-                                                :checked="selectedCategory === category.id"
-                                                @change="selectCategory(category.id)">
+                                            <input class="form-check-input" type="radio" name="categoryFilter"
+                                                :id="'category' + category.id" :value="category.id"
+                                                v-model="selectedCategory" @change="applyFilters">
                                             <label class="form-check-label" :for="'category' + category.id">
                                                 {{ category.categoryName }}
                                             </label>
@@ -88,10 +97,10 @@
                                         </div>
                                     </div>
                                     <select class="form-select w-auto" v-model="sortBy" @change="sortProducts">
-                                        <option value="featured">Sort by: Featured</option>
-                                        <option value="price_low">Price: Low to High</option>
-                                        <option value="price_high">Price: High to Low</option>
-                                        <option value="newest">Newest First</option>
+                                        <option value="featured">Sắp xếp theo: Nổi bật</option>
+                                        <option value="price_low">Giá: Thấp đến cao</option>
+                                        <option value="price_high">Giá: Cao đến thấp</option>
+                                        <option value="newest">Mới nhất</option>
                                     </select>
                                 </div>
                             </div>
@@ -196,7 +205,18 @@ export default {
     methods: {
         async loadProducts() {
             try {
-                const data = await getProducts(this.currentPage, 6, this.selectedCategory, this.searchKeyword);
+                // Reset products before loading
+                this.products = [];
+                // Call API with filters and sorting
+                const data = await getProducts(
+                    this.currentPage,
+                    6, // items per page
+                    this.selectedCategory,
+                    this.searchKeyword,
+                    this.minPrice,
+                    this.maxPrice,
+                    this.sortBy
+                );
                 this.products = data.products;
                 this.totalPages = data.totalPages;
             } catch (error) {
@@ -226,7 +246,16 @@ export default {
         async loadCategories() {
             try {
                 const response = await getCategories();
-                this.categories = response.data.data;
+                console.log('Raw categories response:', response); // Log để xem cấu trúc
+
+                // Sửa lại cách truy cập dữ liệu theo log mới nhất
+                if (response && response.data && Array.isArray(response.data)) {
+                    this.categories = response.data;
+                    console.log('Categories loaded:', this.categories);
+                } else {
+                    console.error('Unexpected categories response structure:', response);
+                    this.categories = []; // Đặt là mảng rỗng nếu cấu trúc sai
+                }
             } catch (error) {
                 console.error('Failed to fetch categories:', error);
                 Swal.fire({
@@ -234,10 +263,12 @@ export default {
                     title: 'Lỗi',
                     text: 'Không thể tải danh mục sản phẩm. Vui lòng thử lại sau.'
                 });
+                this.categories = []; // Đặt là mảng rỗng khi có lỗi
             }
         },
         selectCategory(categoryId) {
-            this.selectedCategory = this.selectedCategory === categoryId ? null : categoryId;
+            this.selectedCategory = categoryId;
+            // No need to call applyFilters here as the change event on radio does it
         },
         applyFilters() {
             this.currentPage = 1;
@@ -248,6 +279,7 @@ export default {
             this.loadProducts();
         },
         sortProducts() {
+            this.currentPage = 1; // Reset to first page when sorting
             this.loadProducts();
         },
         async addToCart(product) {

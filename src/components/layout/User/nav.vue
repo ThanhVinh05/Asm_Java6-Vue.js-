@@ -73,7 +73,7 @@
                     <div class="d-none d-lg-block me-3 ms-5">
                         <div class="input-group">
                             <input type="text" class="form-control" id="navbarSearch" placeholder="Search ..."
-                                v-model="searchKeyword">
+                                v-model="searchKeyword" @keyup.enter="performSearch">
                             <button class="btn btn-success text-light" @click="performSearch">
                                 <i class="fa fa-fw fa-search"></i>
                             </button>
@@ -195,7 +195,7 @@ export default {
             if (searchKeyword.value.trim()) {
                 router.push({
                     name: 'shop',
-                    query: { search: searchKeyword.value.trim() }
+                    query: { keyword: searchKeyword.value.trim() }
                 });
             }
         };

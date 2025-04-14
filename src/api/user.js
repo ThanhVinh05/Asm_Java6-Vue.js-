@@ -140,10 +140,17 @@ export const updateUserProfile = async (profileData) => {
 // Google Authentication
 export const loginWithGoogle = async (googleToken) => {
     try {
+        console.log("Sending Google token to backend:", googleToken);
+        // Gọi đến endpoint /auth/google của backend
         const response = await axios.post(`${API_URL}/auth/google`, { token: googleToken });
+
+        console.log("Backend Google login response:", response.data);
+
         if (response.data && response.data.accessToken) {
+            // Lưu token nhận được từ backend
             tokenService.setToken(response.data.accessToken);
-            
+
+            // Parse thông tin user từ token của backend
             const userData = tokenService.parseJwt(response.data.accessToken);
             const userInfo = {
                 accessToken: response.data.accessToken,
@@ -151,14 +158,16 @@ export const loginWithGoogle = async (googleToken) => {
                 userId: userData.userId,
                 role: userData.role
             };
-            
+
+            // Cập nhật store (nếu dùng)
             userStore.setUserInfo(userInfo.username, userInfo.role);
             await cartStore.initializeCart();
-            
-            return userInfo;
+
+            return userInfo; // Trả về thông tin user đã đăng nhập
         }
-        throw new Error("Đăng nhập Google thất bại");
+        throw new Error("Đăng nhập Google thất bại từ backend");
     } catch (error) {
+        console.error('Error logging in with Google via backend:', error);
         throw error.response?.data?.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
     }
 };

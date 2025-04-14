@@ -66,6 +66,18 @@ export const getCartItems = async () => {
 // Add item to cart
 export const addToCart = async (productId, quantity) => {
     try {
+        // First check if the product is in stock
+        const productResponse = await axios.get(`http://localhost:8080/product/${productId}`);
+        if (!productResponse.data || !productResponse.data.data) {
+            throw new Error('Không thể lấy thông tin sản phẩm');
+        }
+        
+        const productData = productResponse.data.data;
+        if (productData.stockQuantity <= 0) {
+            throw new Error('Sản phẩm này đã hết hàng. Vui lòng chọn sản phẩm khác.');
+        }
+        
+        // If product is available, add to cart
         const response = await axiosInstance.post('/add', {
             productId: productId,
             quantity: quantity
@@ -77,7 +89,7 @@ export const addToCart = async (productId, quantity) => {
             tokenService.removeToken();
             throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
         }
-        throw error.response?.data?.message || 'Không thể thêm vào giỏ hàng';
+        throw error.response?.data?.message || error.message || 'Không thể thêm vào giỏ hàng';
     }
 };
 

@@ -30,6 +30,16 @@ const getFirstImageUrl = (imageJson) => {
 };
 
 const handleAddToCart = async (product) => {
+    // Check if the product is out of stock
+    if (product.stockQuantity <= 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Sản phẩm đã hết',
+            text: 'Sản phẩm này hiện đã hết hàng. Vui lòng chọn sản phẩm khác.',
+        });
+        return;
+    }
+
     if (!userStore.isLoggedIn.value) {
         const result = await Swal.fire({
             icon: 'warning',
@@ -119,6 +129,10 @@ const handleAddToCart = async (product) => {
                             <div class="card-img-container">
                                 <img v-if="getFirstImageUrl(product.image)" :src="getFirstImageUrl(product.image)"
                                     class="card-img-top" :alt="product.productName">
+                                <!-- Out of stock badge -->
+                                <div v-if="product.stockQuantity <= 0" class="out-of-stock-badge">
+                                    <span>Hết hàng</span>
+                                </div>
                                 <div class="card-overlay">
                                     <router-link :to="{ name: 'productDetail', params: { productId: product.id } }"
                                         class="btn btn-light btn-sm">
@@ -129,8 +143,14 @@ const handleAddToCart = async (product) => {
                             <div class="card-body text-center">
                                 <h5 class="card-title mb-2">{{ product.productName }}</h5>
                                 <p class="card-text text-success fw-bold mb-3">${{ product.productPrice }}</p>
-                                <button class="btn btn-outline-success w-100" @click="handleAddToCart(product)">
-                                    <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <small class="text-muted">Còn lại: {{ product.stockQuantity || 0 }}</small>
+                                </div>
+                                <button class="btn w-100"
+                                    :class="product.stockQuantity > 0 ? 'btn-outline-success' : 'btn-secondary'"
+                                    @click="handleAddToCart(product)" :disabled="product.stockQuantity <= 0">
+                                    <i class="fas fa-shopping-cart me-2"></i>
+                                    {{ product.stockQuantity > 0 ? 'Add to Cart' : 'Hết hàng' }}
                                 </button>
                             </div>
                         </div>
@@ -196,6 +216,18 @@ const handleAddToCart = async (product) => {
 
 .product-card:hover .card-img-top {
     transform: scale(1.1);
+}
+
+.out-of-stock-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    z-index: 10;
 }
 
 .btn-outline-success {

@@ -1,11 +1,13 @@
 import axios from 'axios';
-import { API_URL } from './config';
 import { tokenService } from '../utils/tokenService';
+import { getUserDetail } from './user'; // Import getUserDetail
+
+const API_URL = 'http://localhost:8080/dashboard'; // Assuming a /dashboard base URL
 
 // Create axios instance with auth header
 const axiosInstance = axios.create({
     baseURL: API_URL,
-    timeout: 10000
+    timeout: 10000, // Longer timeout for potential complex queries
 });
 
 // Add auth token to requests
@@ -22,185 +24,120 @@ axiosInstance.interceptors.request.use(
     }
 );
 
-// Lấy thống kê tổng quan cho dashboard
+// --- Actual API Calls ---
+
+// Fetch general dashboard statistics
 export const getDashboardStats = async () => {
     try {
-        const response = await axiosInstance.get(`${API_URL}/admin/dashboard/stats`);
-        return response.data;
+        const response = await axiosInstance.get('/stats');
+        // Assuming the API returns { status: 200, message: '...', data: { totalOrders: ..., totalUsers: ..., ... } }
+        if (response.data && response.data.status === 200) {
+            return response.data; // Return the whole response object
+        }
+        throw new Error(response.data?.message || 'Could not fetch dashboard stats');
     } catch (error) {
         console.error('Error fetching dashboard stats:', error);
-        throw error;
+        throw error.response?.data?.message || 'Failed to load dashboard statistics.';
     }
 };
 
-// Lấy doanh thu theo thời gian (năm/tháng)
-export const getRevenueStats = async (period = 'year', year = new Date().getFullYear(), month = null) => {
-    let url = `${API_URL}/admin/dashboard/revenue?period=${period}&year=${year}`;
-    if (month) url += `&month=${month}`;
-    
+// Fetch revenue statistics for the chart
+export const getRevenueStats = async (period, year, month) => {
     try {
-        const response = await axiosInstance.get(url);
-        return response.data;
+        const params = { period, year };
+        if (period === 'month' && month) {
+            params.month = month;
+        }
+        const response = await axiosInstance.get('/revenue-stats', { params });
+        // Assuming API returns { status: 200, message: '...', data: { labels: [...], datasets: [...] } }
+        if (response.data && response.data.status === 200) {
+            return response.data; // Return the whole response object
+        }
+        throw new Error(response.data?.message || 'Could not fetch revenue statistics');
     } catch (error) {
         console.error('Error fetching revenue stats:', error);
-        throw error;
+        throw error.response?.data?.message || 'Failed to load revenue statistics.';
     }
 };
 
-// Lấy danh sách đơn hàng gần đây
-export const getRecentOrders = async (limit = 10) => {
+// Fetch recent orders and enrich with customer names
+export const getRecentOrders = async (limit = 30) => { // Fetch more orders for filtering
     try {
-        const response = await axiosInstance.get(`${API_URL}/admin/dashboard/recent-orders?limit=${limit}`);
-        return response.data;
+        // Using the main order endpoint
+        const orderApiInstance = axios.create({ baseURL: 'http://localhost:8080/order' });
+        orderApiInstance.interceptors.request.use(
+            config => {
+                const token = tokenService.getToken();
+                if (token) {
+                    config.headers['Authorization'] = `Bearer ${token}`;
+                }
+                return config;
+            }, error => Promise.reject(error)
+        );
+
+        const response = await orderApiInstance.get('/list', {
+            params: {
+                page: 1, // Get first page
+                size: limit,
+                sort: 'createdAt:desc' // Sort by newest first
+            }
+        });
+
+        if (response.data && response.data.status === 200 && response.data.data?.orders) {
+            const orders = response.data.data.orders;
+
+            // Fetch user details for each order to get customer name
+            const enrichedOrders = await Promise.all(orders.map(async (order) => {
+                let customerName = `User ${order.userId || 'N/A'}`;
+                if (order.userId) {
+                    try {
+                        const userDetails = await getUserDetail(order.userId);
+                        if (userDetails) {
+                            customerName = userDetails.username;
+                        }
+                    } catch (userError) {
+                        console.error(`Failed to fetch user details for userId ${order.userId}:`, userError);
+                    }
+                }
+                return {
+                    id: order.id,
+                    customerName: customerName, // Use fetched name
+                    createdAt: order.createdAt,
+                    status: order.status,
+                    total: order.totalAmount
+                };
+            }));
+
+            return { status: 200, message: "Recent orders fetched", data: enrichedOrders };
+        }
+        throw new Error(response.data?.message || 'Could not fetch recent orders');
     } catch (error) {
         console.error('Error fetching recent orders:', error);
-        throw error;
+        throw error.response?.data?.message || 'Failed to load recent orders.';
     }
 };
 
-// Lấy top sản phẩm bán chạy
-export const getTopProducts = async (limit = 10) => {
+
+// Fetch top selling products
+export const getTopProducts = async (limit = 5) => {
     try {
-        const response = await axiosInstance.get(`${API_URL}/admin/dashboard/top-products?limit=${limit}`);
-        return response.data;
+        const response = await axiosInstance.get('/top-products', {
+            params: { limit }
+        });
+        // Assuming API returns { status: 200, message: '...', data: [{ productId: ..., productName: ..., quantity: ..., revenue: ... }] }
+        if (response.data && response.data.status === 200) {
+            return response.data; // Return the whole response object
+        }
+        throw new Error(response.data?.message || 'Could not fetch top products');
     } catch (error) {
         console.error('Error fetching top products:', error);
-        throw error;
+        throw error.response?.data?.message || 'Failed to load top products.';
     }
 };
 
-// API giả để phát triển frontend
-export const getMockDashboardStats = async () => {
-    return {
-        status: 200,
-        message: "Dashboard stats retrieved successfully",
-        data: {
-            totalOrders: 150,
-            totalUsers: 100,
-            totalProducts: 50,
-            totalRevenue: 10000,
-            totalCompletedOrders: 120
-        }
-    };
-};
+// --- Keep Mock Functions for Reference/Fallback (Optional) ---
 
-export const getMockRevenueStats = async (period = 'year') => {
-    if (period === 'year') {
-        return {
-            status: 200,
-            message: "Revenue stats retrieved successfully",
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [
-                    {
-                        label: 'Doanh thu (VNĐ)',
-                        data: [1200000, 1900000, 3000000, 5000000, 2000000, 3000000, 7000000, 8000000, 4000000, 2000000, 9000000, 10000000]
-                    }
-                ]
-            }
-        };
-    } else {
-        return {
-            status: 200,
-            message: "Revenue stats retrieved successfully",
-            data: {
-                labels: ['01', '05', '10', '15', '20', '25', '30'],
-                datasets: [
-                    {
-                        label: 'Doanh thu (VNĐ)',
-                        data: [300000, 500000, 700000, 1100000, 900000, 1200000, 1500000]
-                    }
-                ]
-            }
-        };
-    }
-};
-
-export const getMockRecentOrders = async () => {
-    return {
-        status: 200,
-        message: "Recent orders retrieved successfully",
-        data: [
-            {
-                id: 1,
-                customerName: "John Doe",
-                createdAt: "2024-07-01T08:30:00",
-                status: "COMPLETED",
-                total: 150000
-            },
-            {
-                id: 2,
-                customerName: "Jane Smith",
-                createdAt: "2024-07-01T10:15:00",
-                status: "SHIPPING",
-                total: 250000
-            },
-            {
-                id: 3,
-                customerName: "Mike Johnson",
-                createdAt: "2024-06-30T14:20:00",
-                status: "COMPLETED",
-                total: 350000
-            },
-            {
-                id: 4,
-                customerName: "Sarah Williams",
-                createdAt: "2024-06-30T11:45:00",
-                status: "PENDING",
-                total: 120000
-            },
-            {
-                id: 5,
-                customerName: "Robert Brown",
-                createdAt: "2024-06-29T16:30:00",
-                status: "CONFIRMED",
-                total: 180000
-            }
-        ]
-    };
-};
-
-export const getMockTopProducts = async () => {
-    return {
-        status: 200,
-        message: "Top products retrieved successfully",
-        data: [
-            {
-                id: 1,
-                productName: "Vợt cầu lông Yonex Astrox 99 Pro",
-                quantity: 14,
-                revenue: 1400000
-            },
-            {
-                id: 2,
-                productName: "Vợt cầu lông Yonex Astrox 100ZZ",
-                quantity: 12,
-                revenue: 1200000
-            },
-            {
-                id: 3,
-                productName: "Vợt cầu lông Victor Auraspeed 90S",
-                quantity: 10,
-                revenue: 1000000
-            },
-            {
-                id: 4,
-                productName: "Giày cầu lông Lining AYAT001-1",
-                quantity: 8,
-                revenue: 800000
-            },
-            {
-                id: 5,
-                productName: "Áo cầu lông Yonex 1560EX",
-                quantity: 6,
-                revenue: 600000
-            },
-            {
-                id: 6,
-                productName: "Áo cầu lông Lining 6088",
-                quantity: 5,
-                revenue: 500000
-            }
-        ]
-    };
-}; 
+// export const getMockDashboardStats = async () => { ... };
+// export const getMockRevenueStats = async (period) => { ... };
+// export const getMockRecentOrders = async () => { ... };
+// export const getMockTopProducts = async () => { ... };

@@ -60,9 +60,10 @@
                                     </span>
                                 </button>
 
-                                <button type="button" class="btn btn-outline-danger" @click="handleGoogleLogin">
-                                    <i class="fab fa-google me-2"></i>Đăng nhập bằng Google
-                                </button>
+                                <!-- Google Sign-In Button Placeholder -->
+                                <div id="googleSignInButton" class="mt-3 d-flex justify-content-center"></div>
+
+                                <hr class="my-3">
 
                                 <router-link to="/register" class="btn btn-outline-success">
                                     <i class="fas fa-user-plus me-2"></i>Chưa có tài khoản? Đăng ký ngay
@@ -77,29 +78,143 @@
 </template>
 
 <script>
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { login, loginWithGoogle } from "/src/api/user";
 import Swal from 'sweetalert2';
 import { userStore } from '../../store/userStore';
-import { logout } from "/src/api/user";
+import { tokenService } from '../../utils/tokenService';
 import { cartStore } from '../../store/cartStore';
-import { useRouter } from 'vue-router';
 
 export default {
     setup() {
         const router = useRouter();
+        const form = ref({ username: "", password: "" });
+        const errors = ref({});
+        const isLoading = ref(false);
+        const showPassword = ref(false);
+        const rememberMe = ref(false);
 
-        const handleLogout = async () => {
+        const handleLogin = async () => {
+            errors.value = {};
+            isLoading.value = true;
             try {
-                await logout();
-                cartStore.resetCart();
-                router.push('/login');
+                const user = await login(form.value);
+                tokenService.setToken(user.accessToken);
+                userStore.setUserInfo(user.username, user.role);
+                await cartStore.initializeCart();
+
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng nhập thành công',
+                    text: `Xin chào ${user.username}!`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                router.push("/");
             } catch (error) {
-                console.error('Logout failed:', error);
+                if (error.response?.data?.errors) {
+                    errors.value = error.response.data.errors;
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Đăng nhập thất bại',
+                        text: error.message || 'Vui lòng kiểm tra lại thông tin đăng nhập',
+                    });
+                }
+            } finally {
+                isLoading.value = false;
             }
         };
 
+        // Hàm xử lý callback từ Google
+        const handleGoogleCredentialResponse = async (response) => {
+            console.log("Received Google Credential:", response);
+            isLoading.value = true;
+            try {
+                const idToken = response.credential;
+                // Gọi API backend với ID token
+                const userInfo = await loginWithGoogle(idToken);
+
+                // Không cần lưu token ở đây vì loginWithGoogle đã làm
+                // Không cần cập nhật userStore vì loginWithGoogle đã làm
+                // Không cần initializeCart vì loginWithGoogle đã làm
+
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng nhập Google thành công',
+                    text: `Xin chào ${userInfo.username}!`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                router.push("/");
+            } catch (error) {
+                console.error('Google Sign-In Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Đăng nhập Google thất bại',
+                    text: error.message || 'Vui lòng thử lại.',
+                });
+            } finally {
+                isLoading.value = false;
+            }
+        };
+
+        // Khởi tạo Google Client và Render nút
+        const initializeGoogleSignIn = () => {
+            if (window.google && window.google.accounts) {
+                try {
+                    window.google.accounts.id.initialize({
+                        client_id: '750325745930-gvk5ikmvg03dd77d0flac1s05p6pmi3c.apps.googleusercontent.com', // **QUAN TRỌNG: Thay YOUR_GOOGLE_CLIENT_ID bằng Client ID thật của bạn**
+                        callback: handleGoogleCredentialResponse,
+                        context: 'signin',
+                        ux_mode: 'popup',
+                        auto_select: false, // Hoặc true nếu muốn tự động chọn tài khoản đã đăng nhập trước đó
+                        itp_support: true
+                    });
+
+                    const googleButtonElement = document.getElementById('googleSignInButton');
+                    if (googleButtonElement) {
+                        window.google.accounts.id.renderButton(
+                            googleButtonElement,
+                            { theme: "outline", size: "large", type: "standard", text: "signin_with", shape: "rectangular" } // Tùy chỉnh giao diện nút
+                        );
+                    } else {
+                        console.error("Element with id 'googleSignInButton' not found.");
+                    }
+                    // google.accounts.id.prompt(); // Hiển thị One Tap prompt nếu muốn
+                } catch (error) {
+                    console.error("Error initializing Google Sign-In:", error);
+                }
+            } else {
+                console.error("Google Identity Services library not loaded.");
+                // Có thể thử lại sau một khoảng thời gian ngắn
+                // setTimeout(initializeGoogleSignIn, 500);
+            }
+        };
+
+        onMounted(() => {
+            // Đảm bảo thư viện Google đã tải xong trước khi khởi tạo
+            if (window.google) {
+                initializeGoogleSignIn();
+            } else {
+                // Nếu chưa tải xong, đợi sự kiện tải xong của script
+                const checkGoogleInterval = setInterval(() => {
+                    if (window.google && window.google.accounts) {
+                        clearInterval(checkGoogleInterval);
+                        initializeGoogleSignIn();
+                    }
+                }, 100);
+            }
+        });
+
         return {
-            handleLogout
+            form,
+            errors,
+            isLoading,
+            showPassword,
+            rememberMe,
+            login: handleLogin,
         };
     },
     data() {
@@ -290,5 +405,10 @@ export default {
     border-color: #dc3545;
     color: white;
     transform: translateY(-2px);
+}
+
+#googleSignInButton>div {
+    margin: auto !important;
+    /* Căn giữa nút Google */
 }
 </style>

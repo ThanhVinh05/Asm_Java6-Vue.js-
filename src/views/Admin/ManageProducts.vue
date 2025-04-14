@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useStore } from 'vuex';
 import { getCategories } from '../../api/category';
 import { tokenService } from '../../utils/tokenService';
@@ -10,12 +10,18 @@ const products = ref([]);
 const categories = ref([]);
 const loading = ref(true);
 
+// Pagination state
+const currentPage = ref(1);
+const itemsPerPage = ref(10); // Show 10 products per page
+const totalProducts = ref(0);
+
 // Fetch products from the API
 const fetchProducts = async () => {
     try {
         loading.value = true;
         const response = await store.dispatch('products/fetchAllProducts');
         products.value = response.data || [];
+        totalProducts.value = products.value.length; // Update total products
         console.log('Products loaded:', products.value);
 
         // Also load categories to display category names
@@ -95,7 +101,7 @@ const deleteProduct = async (productId) => {
                 timer: 1500
             });
 
-            await fetchProducts();
+            await fetchProducts(); // Refetch products after deletion
         }
     } catch (error) {
         console.error('Error deleting product:', error);
@@ -104,6 +110,25 @@ const deleteProduct = async (productId) => {
             title: 'Lỗi!',
             text: error.message || 'Không thể xóa sản phẩm. Vui lòng thử lại sau.'
         });
+    }
+};
+
+// Computed property for total pages
+const totalPages = computed(() => {
+    return Math.ceil(totalProducts.value / itemsPerPage.value);
+});
+
+// Computed property for paginated products
+const paginatedProducts = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage.value;
+    const end = start + itemsPerPage.value;
+    return products.value.slice(start, end);
+});
+
+// Method to change page
+const changePage = (page) => {
+    if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page;
     }
 };
 
@@ -144,12 +169,12 @@ onMounted(() => {
                         </div>
                     </td>
                 </tr>
-                <tr v-else-if="products.length === 0">
+                <tr v-else-if="paginatedProducts.length === 0">
                     <td colspan="7" class="text-center">
-                        Không tìm thấy sản phẩm nào. Vui lòng thêm sản phẩm.
+                        Không tìm thấy sản phẩm nào.
                     </td>
                 </tr>
-                <tr v-else v-for="product in products" :key="product.id">
+                <tr v-else v-for="product in paginatedProducts" :key="product.id">
                     <td>{{ product.id }}</td>
                     <td>
                         <img :src="getFirstImage(product.image)" :alt="product.productName" class="img-thumbnail"
@@ -171,6 +196,32 @@ onMounted(() => {
             </tbody>
         </table>
     </div>
+
+    <!-- Pagination Controls -->
+    <div v-if="!loading && products.length > 0" class="d-flex justify-content-between align-items-center mt-4">
+        <div>
+            <span class="text-muted">
+                Hiển thị {{ paginatedProducts.length }} / {{ totalProducts }} sản phẩm
+            </span>
+        </div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination mb-0">
+                <li class="page-item" :class="{ disabled: currentPage <= 1 }">
+                    <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: page === currentPage }">
+                    <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
+                </li>
+                <li class="page-item" :class="{ disabled: currentPage >= totalPages }">
+                    <a class="page-link" href="#" @click.prevent="changePage(currentPage + 1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </template>
 
 <style scoped>
@@ -182,5 +233,18 @@ onMounted(() => {
 
 .img-thumbnail {
     object-fit: cover;
+}
+
+.pagination .page-link {
+    border-radius: 5px;
+    margin: 0 2px;
+    color: #198754;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
 }
 </style>

@@ -66,6 +66,11 @@
                                                 @click="confirmCancelOrder(order.id)">
                                                 <i class="fas fa-times"></i>
                                             </button>
+                                            <button v-if="order.status === 'SHIPPING'"
+                                                class="btn btn-sm btn-outline-success"
+                                                @click="confirmOrderReceived(order.id)">
+                                                <i class="fas fa-check me-1"></i> Đã nhận
+                                            </button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -188,6 +193,11 @@
                             </div>
                         </div>
                         <div class="modal-footer">
+                            <button v-if="selectedOrder && selectedOrder.status === 'SHIPPING'"
+                                class="btn btn-success me-auto"
+                                @click="confirmOrderReceivedFromModal(selectedOrder.id)">
+                                <i class="fas fa-check me-1"></i> Xác nhận đã nhận hàng
+                            </button>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                         </div>
                     </div>
@@ -199,7 +209,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue';
-import { getUserOrders, getOrderDetails, cancelOrder } from '../../api/order';
+import { getUserOrders, getOrderDetails, cancelOrder, updateOrderStatus } from '../../api/order';
 import Swal from 'sweetalert2';
 
 export default {
@@ -410,6 +420,53 @@ export default {
             }
         };
 
+        const confirmOrderReceived = async (orderId, fromModal = false) => {
+            try {
+                const result = await Swal.fire({
+                    title: 'Xác nhận đã nhận đơn hàng?',
+                    text: 'Bạn có chắc chắn đã nhận đơn hàng này?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Đã nhận',
+                    cancelButtonText: 'Chưa nhận'
+                });
+
+                if (result.isConfirmed) {
+                    await updateOrderStatus(orderId, 'COMPLETED');
+
+                    // If confirming from modal, close it
+                    if (fromModal) {
+                        const modalElement = document.getElementById('orderDetailsModal');
+                        const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+
+                    // Refresh orders list
+                    await loadOrders(currentPage.value);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công!',
+                        text: 'Đơn hàng đã được xác nhận là đã nhận',
+                        timer: 1500
+                    });
+                }
+            } catch (error) {
+                console.error('Error confirming order received:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi',
+                    text: 'Không thể xác nhận đơn hàng'
+                });
+            }
+        };
+
+        const confirmOrderReceivedFromModal = (orderId) => {
+            confirmOrderReceived(orderId, true);
+        };
+
         onMounted(() => {
             loadOrders();
         });
@@ -430,7 +487,9 @@ export default {
             getPaymentMethodBadgeClass,
             changePage,
             viewOrderDetails,
-            confirmCancelOrder
+            confirmCancelOrder,
+            confirmOrderReceived,
+            confirmOrderReceivedFromModal
         };
     }
 };
@@ -486,6 +545,17 @@ export default {
     color: #fff;
     background-color: #dc3545;
     border-color: #dc3545;
+}
+
+.btn-outline-success {
+    color: #198754;
+    border-color: #198754;
+}
+
+.btn-outline-success:hover {
+    color: #fff;
+    background-color: #198754;
+    border-color: #198754;
 }
 
 .modal-dialog {

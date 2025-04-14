@@ -27,9 +27,8 @@ import AdminSidebar from '../../components/layout/Admin/sidebar.vue';
 }
 
 .sidebar {
-    max-height: 100vh;
-    position: fixed;
-    top: 160px;
+    max-height: 160vh;
+    top: 100px;
     bottom: 0;
     left: 0;
     z-index: 100;
