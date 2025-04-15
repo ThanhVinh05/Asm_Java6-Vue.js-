@@ -173,17 +173,19 @@ const handleAddToCart = async (product) => {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border-radius: 10px;
     overflow: hidden;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
 .product-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
 
 .card-img-container {
     position: relative;
     overflow: hidden;
-    padding-top: 100%;
+    aspect-ratio: 1 / 1;
 }
 
 .card-img-top {
@@ -202,7 +204,7 @@ const handleAddToCart = async (product) => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -215,27 +217,54 @@ const handleAddToCart = async (product) => {
 }
 
 .product-card:hover .card-img-top {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .out-of-stock-badge {
     position: absolute;
     top: 10px;
-    right: 10px;
-    background-color: rgba(220, 53, 69, 0.9);
+    left: 10px;
+    background-color: rgba(220, 53, 69, 0.85);
     color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
     z-index: 10;
 }
 
 .btn-outline-success {
     transition: all 0.3s ease;
+    border-width: 1px;
 }
 
 .btn-outline-success:hover {
-    transform: translateY(-2px);
+    transform: none;
+    background-color: #198754;
+    color: white;
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1rem;
+}
+
+.card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.card-text {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-body .btn {
+    margin-top: auto;
+    padding: 0.375rem 0.75rem;
 }
 
 @media (max-width: 768px) {

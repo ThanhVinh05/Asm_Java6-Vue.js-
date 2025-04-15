@@ -117,7 +117,7 @@
                                                 <div class="d-flex justify-content-between mb-3">
                                                     <strong>Tổng cộng:</strong>
                                                     <strong class="text-success">${{ selectedTotal.toFixed(2)
-                                                        }}</strong>
+                                                    }}</strong>
                                                 </div>
                                                 <div class="d-grid gap-2">
 

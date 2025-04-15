@@ -2,10 +2,11 @@
 import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { updateOrderStatus, getUserByOrder, getOrderDetails } from '../../api/order';
+import { updateOrderStatus, getUserByOrder, getOrderDetails, getOrdersByUserId } from '../../api/order';
 import { updateProductStock } from '../../api/product';
 import Swal from 'sweetalert2';
 import axios from 'axios';
+import { tokenService } from '../../utils/tokenService';
 
 // Cấu hình API URL cơ sở cho axios
 axios.defaults.baseURL = 'http://localhost:8080';
@@ -15,7 +16,6 @@ const router = useRouter();
 
 // State
 const orders = ref([]);
-const filteredOrders = ref([]);
 const users = ref({});
 const loading = ref(true);
 const error = ref(null);
@@ -25,38 +25,56 @@ const statusFilter = ref('ALL');
 const sortOption = ref('newest');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
-const totalOrders = ref(0);
+const serverTotalOrders = ref(0);
 
 // Computed
 const totalPages = computed(() => {
-    return Math.ceil(totalOrders.value / itemsPerPage.value);
+    return Math.ceil(serverTotalOrders.value / itemsPerPage.value);
 });
 
 // Methods
-const fetchOrders = async () => {
+const fetchOrders = async (page = currentPage.value) => {
     try {
         loading.value = true;
         error.value = null;
+        currentPage.value = page;
 
-        const token = localStorage.getItem('accessToken');
+        const token = tokenService.getToken();
         if (!token) {
             error.value = 'Bạn cần đăng nhập để xem đơn hàng';
             loading.value = false;
             return;
         }
 
-        // Đơn giản hóa tham số gửi đi, loại bỏ các tham số có thể gây lỗi
-        const response = await axios.get('http://localhost:8080/order/list', {
+        let sortParam = 'createdAt:desc';
+        switch (sortOption.value) {
+            case 'oldest': sortParam = 'createdAt:asc'; break;
+            case 'highestAmount': sortParam = 'totalAmount:desc'; break;
+            case 'lowestAmount': sortParam = 'totalAmount:asc'; break;
+        }
+
+        const params = {
+            page: currentPage.value,
+            size: itemsPerPage.value,
+            sort: sortParam,
+            keyword: searchTerm.value || null,
+            status: statusFilter.value !== 'ALL' ? statusFilter.value : null,
+        };
+
+        Object.keys(params).forEach(key => {
+            if (params[key] === null || params[key] === '') {
+                delete params[key];
+            }
+        });
+
+        console.log('Fetching orders with params:', params);
+
+        const response = await axios.get('/order/list', {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'application/json'
             },
-            params: {
-                page: currentPage.value,
-                size: itemsPerPage.value,
-                // Chỉ gửi các tham số cơ bản nhất
-                // Tránh gửi tham số sort cho tới khi backend được sửa
-            }
+            params: params
         });
 
         console.log('API Response:', response.data);
@@ -66,46 +84,36 @@ const fetchOrders = async () => {
 
             if (responseData && responseData.orders) {
                 orders.value = responseData.orders || [];
-                totalOrders.value = responseData.totalElements;
-            } else if (Array.isArray(responseData)) {
-                orders.value = responseData;
-                totalOrders.value = responseData.length;
+                serverTotalOrders.value = responseData.totalElements || 0;
             } else {
                 orders.value = [];
-                totalOrders.value = 0;
+                serverTotalOrders.value = 0;
                 console.error('Unexpected response format:', responseData);
             }
 
-            applyFilters();
-            fetchUserInfo();
+            fetchUserInfoForCurrentPage();
         } else {
             throw new Error(response.data?.message || 'Không thể tải danh sách đơn hàng');
         }
     } catch (err) {
         console.error('Error fetching orders:', err);
-
         if (err.response) {
-            const responseText = err.response.data;
-            if (typeof responseText === 'string' && responseText.includes('JDBC exception')) {
-                error.value = "Lỗi SQL trong truy vấn - Vui lòng liên hệ quản trị viên để sửa lỗi trong câu truy vấn";
-            } else if (err.response.data && err.response.data.message) {
-                error.value = err.response.data.message;
-            } else {
-                error.value = `Lỗi từ server: ${err.response.status}`;
-            }
+            error.value = `Lỗi từ server: ${err.response.status} - ${err.response.data?.message || 'Unknown error'}`;
         } else if (err.request) {
             error.value = 'Không nhận được phản hồi từ server. Kiểm tra kết nối mạng.';
         } else {
             error.value = `Lỗi khi gửi yêu cầu: ${err.message}`;
         }
+        orders.value = [];
+        serverTotalOrders.value = 0;
     } finally {
         loading.value = false;
     }
 };
 
-const fetchUserInfo = async () => {
+const fetchUserInfoForCurrentPage = async () => {
     try {
-        const userPromises = filteredOrders.value.map(async (order) => {
+        const userPromises = orders.value.map(async (order) => {
             if (!users.value[order.id]) {
                 try {
                     const response = await getUserByOrder(order.id);
@@ -114,86 +122,35 @@ const fetchUserInfo = async () => {
                     }
                 } catch (error) {
                     console.error(`Error fetching user for order ${order.id}:`, error);
+                    users.value[order.id] = { username: 'N/A', email: 'N/A' };
                 }
             }
         });
-
         await Promise.all(userPromises);
     } catch (error) {
-        console.error('Error fetching users:', error);
-    }
-};
-
-const refreshOrders = async () => {
-    currentPage.value = 1;
-    await fetchOrders();
-};
-
-const applyFilters = () => {
-    let result = [...orders.value];
-
-    // Apply status filter
-    if (statusFilter.value !== 'ALL') {
-        result = result.filter(order => order.status === statusFilter.value);
-    }
-
-    // Apply search filter
-    if (searchTerm.value.trim()) {
-        const term = searchTerm.value.toLowerCase().trim();
-        result = result.filter(order =>
-            order.id.toString().includes(term)
-        );
-    }
-
-    // Apply sorting
-    result = sortOrders(result);
-
-    // Update total
-    totalOrders.value = result.length;
-
-    // Apply pagination
-    const startIndex = (currentPage.value - 1) * itemsPerPage.value;
-    const endIndex = startIndex + itemsPerPage.value;
-
-    filteredOrders.value = result.slice(startIndex, endIndex);
-};
-
-const sortOrders = (ordersToSort) => {
-    switch (sortOption.value) {
-        case 'newest':
-            return [...ordersToSort].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        case 'oldest':
-            return [...ordersToSort].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        case 'highestAmount':
-            return [...ordersToSort].sort((a, b) => b.totalAmount - a.totalAmount);
-        case 'lowestAmount':
-            return [...ordersToSort].sort((a, b) => a.totalAmount - b.totalAmount);
-        default:
-            return ordersToSort;
+        console.error('Error fetching users for current page:', error);
     }
 };
 
 const handleSearch = () => {
-    currentPage.value = 1;
-    applyFilters();
+    fetchOrders(1);
 };
 
 const filterByStatus = () => {
-    currentPage.value = 1;
-    applyFilters();
+    fetchOrders(1);
 };
 
 const handleSort = () => {
-    applyFilters();
+    fetchOrders(1);
 };
 
 const changePage = (page) => {
-    if (page < 1 || page > totalPages.value) return;
-    currentPage.value = page;
-    applyFilters();
+    if (page < 1 || page > totalPages.value || page === currentPage.value) return;
+    fetchOrders(page);
+};
 
-    // Fetch user info for the new page
-    fetchUserInfo();
+const refreshOrders = async () => {
+    await fetchOrders(1);
 };
 
 const handleStatusUpdate = async (orderId, newStatus) => {
@@ -210,23 +167,23 @@ const handleStatusUpdate = async (orderId, newStatus) => {
         });
 
         if (result.isConfirmed) {
-            // If changing from CONFIRMED to SHIPPING, update product stock quantities
             if (newStatus === 'SHIPPING') {
                 try {
-                    // Get order details to access the products
                     const orderDetails = await getOrderDetails(orderId);
-
                     if (orderDetails && orderDetails.orderDetails && orderDetails.orderDetails.length > 0) {
-                        // For each product in the order, update the stock
                         for (const item of orderDetails.orderDetails) {
-                            await updateProductStock(item.productId, item.quantity);
+                            if (item.productId) {
+                                await updateProductStock(item.productId, item.quantity);
+                            } else {
+                                console.warn(`Product ID missing for order detail item: ${item.id}`);
+                            }
                         }
-
                         console.log('Successfully updated product stock quantities');
+                    } else {
+                        console.warn(`No order details found for order ${orderId} to update stock.`);
                     }
                 } catch (stockError) {
                     console.error('Error updating product stock:', stockError);
-                    // Show warning but continue with status update
                     Swal.fire({
                         icon: 'warning',
                         title: 'Cảnh báo',
@@ -236,19 +193,17 @@ const handleStatusUpdate = async (orderId, newStatus) => {
                 }
             }
 
-            // Update order status
-            const response = await axios.put(`/order/${orderId}/status`, { status: newStatus });
+            const token = tokenService.getToken();
+            const response = await axios.put(`/order/${orderId}/status`, { status: newStatus }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
 
             if (response.data && response.data.status === 200) {
-                // Update the order in the local state
                 const orderIndex = orders.value.findIndex(o => o.id === orderId);
                 if (orderIndex !== -1) {
                     orders.value[orderIndex].status = newStatus;
                     orders.value[orderIndex].updatedAt = new Date().toISOString();
                 }
-
-                // Refresh data
-                applyFilters();
 
                 Swal.fire({
                     icon: 'success',
@@ -272,7 +227,6 @@ const handleStatusUpdate = async (orderId, newStatus) => {
     }
 };
 
-// Helper functions
 const getStatusClass = (status) => {
     switch (status) {
         case 'PENDING': return 'bg-warning';
@@ -330,9 +284,8 @@ const formatPaymentMethod = (method) => {
     }
 };
 
-// Initialize
 onMounted(() => {
-    fetchOrders();
+    fetchOrders(1);
 });
 </script>
 
@@ -343,7 +296,6 @@ onMounted(() => {
                 <h3 class="mb-0">Quản lý đơn hàng</h3>
             </div>
             <div class="card-body">
-                <!-- Filter controls -->
                 <div class="row mb-4">
                     <div class="col-md-4">
                         <div class="input-group">
@@ -379,7 +331,6 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <!-- Loading indicator -->
                 <div v-if="loading" class="text-center my-5">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
@@ -387,13 +338,11 @@ onMounted(() => {
                     <p class="mt-2">Đang tải danh sách đơn hàng...</p>
                 </div>
 
-                <!-- Error message -->
                 <div v-else-if="error" class="alert alert-danger">
                     {{ error }}
                 </div>
 
-                <!-- Orders table -->
-                <div v-else-if="filteredOrders.length > 0" class="table-responsive">
+                <div v-else-if="orders.length > 0" class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
@@ -407,7 +356,7 @@ onMounted(() => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="order in filteredOrders" :key="order.id">
+                            <tr v-for="order in orders" :key="order.id">
                                 <td>{{ order.id }}</td>
                                 <td>
                                     {{ new Date(order.createdAt).toLocaleDateString('vi-VN') }}
@@ -417,10 +366,13 @@ onMounted(() => {
                                     </small>
                                 </td>
                                 <td>
-                                    <div v-if="users[order.id]">
+                                    <div v-if="users[order.id] && users[order.id].username !== 'N/A'">
                                         {{ users[order.id].username }}
                                         <br>
                                         <small class="text-muted">{{ users[order.id].email }}</small>
+                                    </div>
+                                    <div v-else-if="users[order.id] && users[order.id].username === 'N/A'">
+                                        <span class="text-muted">Không lấy được TT</span>
                                     </div>
                                     <div v-else class="placeholder-glow">
                                         <span class="placeholder col-7"></span>
@@ -462,22 +414,20 @@ onMounted(() => {
                     </table>
                 </div>
 
-                <!-- Empty state -->
                 <div v-else class="text-center my-5">
                     <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
                     <h5>Không có đơn hàng nào</h5>
                     <p class="text-muted">Chưa có đơn hàng nào phù hợp với bộ lọc hiện tại</p>
                 </div>
 
-                <!-- Pagination -->
-                <div v-if="!loading && filteredOrders.length > 0"
+                <div v-if="!loading && serverTotalOrders > 0"
                     class="d-flex justify-content-between align-items-center mt-4">
                     <div>
-                        <span class="text-muted">Hiển thị {{ filteredOrders.length }} / {{ totalOrders }} đơn
+                        <span class="text-muted">Hiển thị {{ orders.length }} / {{ serverTotalOrders }} đơn
                             hàng</span>
                     </div>
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination">
+                    <nav v-if="totalPages > 1" aria-label="Page navigation">
+                        <ul class="pagination mb-0">
                             <li class="page-item" :class="{ disabled: currentPage <= 1 }">
                                 <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">
                                     <i class="fas fa-chevron-left"></i>
@@ -504,5 +454,31 @@ onMounted(() => {
 .badge {
     font-size: 0.9rem;
     padding: 0.5rem 1rem;
+}
+
+.pagination .page-link {
+    border-radius: 0.25rem;
+    margin: 0 2px;
+    color: #0d6efd;
+    transition: all 0.2s ease-in-out;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+    z-index: 3;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
 }
 </style>

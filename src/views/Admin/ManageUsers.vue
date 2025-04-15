@@ -182,6 +182,7 @@ const closeUserModal = () => {
 // Thay đổi vai trò người dùng
 const changeUserRole = async (user) => {
     try {
+        // Kiểm tra xem người dùng đã là Admin chưa
         if (user.role === 'ADMIN' || user.type === 'ADMIN') {
             Swal.fire({
                 icon: 'warning',
@@ -192,29 +193,44 @@ const changeUserRole = async (user) => {
             return;
         }
 
-        const newRole = 'ADMIN';
-        await Swal.fire({
+        // Xác nhận trước khi thay đổi
+        const result = await Swal.fire({
             title: 'Xác nhận thay đổi vai trò',
             text: `Bạn có chắc muốn thay đổi vai trò của ${user.username} từ User thành Admin?`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Đồng ý',
             cancelButtonText: 'Hủy'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                await store.dispatch('users/updateUserRole', {
-                    userId: user.id,
-                    role: newRole
-                });
-                await fetchUsers(currentPage.value);
-                Swal.fire('Thành công', 'Đã cập nhật vai trò người dùng', 'success');
-            }
         });
+
+        // Nếu người dùng đồng ý
+        if (result.isConfirmed) {
+            console.log('Changing role for user ID:', user.id);
+
+            // Gọi action để cập nhật vai trò
+            await store.dispatch('users/updateUserRole', {
+                userId: user.id,
+                role: 'ADMIN'
+            });
+
+            // Hiển thị thông báo thành công
+            await Swal.fire({
+                icon: 'success',
+                title: 'Thành công',
+                text: 'Đã cập nhật vai trò người dùng thành Admin',
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            // Tải lại toàn bộ danh sách người dùng từ server
+            await fetchUsers(currentPage.value);
+        }
     } catch (error) {
+        console.error('Error changing user role:', error);
         Swal.fire({
             icon: 'error',
             title: 'Lỗi',
-            text: 'Không thể cập nhật vai trò người dùng'
+            text: error.message || 'Không thể cập nhật vai trò người dùng. Vui lòng thử lại sau.'
         });
     }
 };

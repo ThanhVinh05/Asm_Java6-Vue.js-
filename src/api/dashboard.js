@@ -124,10 +124,41 @@ export const getTopProducts = async (limit = 5) => {
         const response = await axiosInstance.get('/top-products', {
             params: { limit }
         });
-        // Assuming API returns { status: 200, message: '...', data: [{ productId: ..., productName: ..., quantity: ..., revenue: ... }] }
+        
+        // Check if we got valid response
         if (response.data && response.data.status === 200) {
-            return response.data; // Return the whole response object
+            // If backend already returns productPrice, return as is
+            if (response.data.data && response.data.data.length > 0 && response.data.data[0].productPrice) {
+                return response.data;
+            }
+            
+            // If backend doesn't return productPrice, try to fetch it from product details
+            const enrichedProducts = await Promise.all(response.data.data.map(async (product) => {
+                try {
+                    // Import product API dynamically to avoid circular dependencies
+                    const productApi = await import('./product');
+                    const productDetail = await productApi.getProductDetail(product.productId);
+                    
+                    return {
+                        ...product,
+                        productPrice: productDetail.productPrice || 0
+                    };
+                } catch (error) {
+                    console.error(`Failed to fetch product details for productId ${product.productId}:`, error);
+                    return {
+                        ...product,
+                        productPrice: 0 // Fallback value if we can't get the price
+                    };
+                }
+            }));
+            
+            // Return enriched data
+            return {
+                ...response.data,
+                data: enrichedProducts
+            };
         }
+        
         throw new Error(response.data?.message || 'Could not fetch top products');
     } catch (error) {
         console.error('Error fetching top products:', error);

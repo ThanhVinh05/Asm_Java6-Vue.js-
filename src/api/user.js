@@ -261,12 +261,17 @@ export const updateUserRole = async (userId, role) => {
         // Lấy thông tin người dùng hiện tại
         const userDetail = await getUserDetail(userId);
         
-        // Cập nhật vai trò
+        console.log('Current user detail before update:', userDetail);
+        console.log('Updating user ID:', userId, 'with new role:', role);
+        
+        // Cập nhật vai trò - Sử dụng type thay vì role vì UserEntity sử dụng trường type
         const userData = {
             ...userDetail,
             id: userId,
-            role: role // Cập nhật vai trò
+            type: role // Thay đổi từ role thành type để match với model UserEntity
         };
+        
+        console.log('User data to be sent for update:', userData);
         
         // Gọi API cập nhật
         const response = await updateUser(userData);

@@ -174,7 +174,7 @@
                                                         <td class="text-center">{{ item.quantity }}</td>
                                                         <td class="text-end">${{ item.price.toFixed(2) }}</td>
                                                         <td class="text-end">${{ (item.price * item.quantity).toFixed(2)
-                                                        }}
+                                                            }}
                                                         </td>
                                                     </tr>
                                                 </tbody>

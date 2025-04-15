@@ -458,7 +458,7 @@ const totalRevenue = computed(() => {
                                 v-for="product in topProducts" :key="product.id">
                                 <div>
                                     <div class="fw-bold">{{ product.productName }}</div>
-                                    <small class="text-muted">{{ formatCurrency(product.revenue) }}</small>
+                                    <small class="text-muted">{{ formatCurrency(product.productPrice) }}</small>
                                 </div>
                                 <span class="badge bg-primary rounded-pill">{{ product.quantity }}</span>
                             </li>

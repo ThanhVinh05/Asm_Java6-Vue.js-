@@ -148,79 +148,85 @@ onMounted(() => {
         </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Hình Ảnh</th>
-                    <th>Tên Sản Phẩm</th>
-                    <th>Loại</th>
-                    <th>Giá</th>
-                    <th>Số Lượng</th>
-                    <th>Thao Tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-if="loading">
-                    <td colspan="7" class="text-center">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
-                </tr>
-                <tr v-else-if="paginatedProducts.length === 0">
-                    <td colspan="7" class="text-center">
-                        Không tìm thấy sản phẩm nào.
-                    </td>
-                </tr>
-                <tr v-else v-for="product in paginatedProducts" :key="product.id">
-                    <td>{{ product.id }}</td>
-                    <td>
-                        <img :src="getFirstImage(product.image)" :alt="product.productName" class="img-thumbnail"
-                            style="width: 50px; height: 50px;">
-                    </td>
-                    <td>{{ product.productName }}</td>
-                    <td>{{ getCategoryName(product.categoryId) }}</td>
-                    <td>{{ product.productPrice.toLocaleString() }}₫</td>
-                    <td>{{ product.stockQuantity || product.quantity || 0 }}</td>
-                    <td>
-                        <router-link :to="'/admin/products/edit/' + product.id" class="btn btn-sm btn-primary me-1">
-                            <i class="fas fa-edit"></i>
-                        </router-link>
-                        <button @click="deleteProduct(product.id)" class="btn btn-sm btn-danger">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Hình Ảnh</th>
+                            <th>Tên Sản Phẩm</th>
+                            <th>Loại</th>
+                            <th>Giá</th>
+                            <th>Số Lượng</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-if="loading">
+                            <td colspan="7" class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-else-if="paginatedProducts.length === 0">
+                            <td colspan="7" class="text-center">
+                                Không tìm thấy sản phẩm nào.
+                            </td>
+                        </tr>
+                        <tr v-else v-for="product in paginatedProducts" :key="product.id">
+                            <td>{{ product.id }}</td>
+                            <td>
+                                <img :src="getFirstImage(product.image)" :alt="product.productName"
+                                    class="img-thumbnail" style="width: 50px; height: 50px;">
+                            </td>
+                            <td>{{ product.productName }}</td>
+                            <td>{{ getCategoryName(product.categoryId) }}</td>
+                            <td>{{ product.productPrice.toLocaleString() }}₫</td>
+                            <td>{{ product.stockQuantity || product.quantity || 0 }}</td>
+                            <td>
+                                <router-link :to="'/admin/products/edit/' + product.id"
+                                    class="btn btn-sm btn-primary me-1">
+                                    <i class="fas fa-edit"></i>
+                                </router-link>
+                                <button @click="deleteProduct(product.id)" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-    <!-- Pagination Controls -->
-    <div v-if="!loading && products.length > 0" class="d-flex justify-content-between align-items-center mt-4">
-        <div>
-            <span class="text-muted">
-                Hiển thị {{ paginatedProducts.length }} / {{ totalProducts }} sản phẩm
-            </span>
+            <!-- Pagination Controls -->
+            <div v-if="!loading && products.length > 0" class="d-flex justify-content-between align-items-center mt-4">
+                <div>
+                    <span class="text-muted">
+                        Hiển thị {{ paginatedProducts.length }} / {{ totalProducts }} sản phẩm
+                    </span>
+                </div>
+                <nav v-if="totalPages > 1" aria-label="Page navigation">
+                    <ul class="pagination mb-0">
+                        <li class="page-item" :class="{ disabled: currentPage <= 1 }">
+                            <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li v-for="page in totalPages" :key="page" class="page-item"
+                            :class="{ active: page === currentPage }">
+                            <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
+                        </li>
+                        <li class="page-item" :class="{ disabled: currentPage >= totalPages }">
+                            <a class="page-link" href="#" @click.prevent="changePage(currentPage + 1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
         </div>
-        <nav aria-label="Page navigation">
-            <ul class="pagination mb-0">
-                <li class="page-item" :class="{ disabled: currentPage <= 1 }">
-                    <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                </li>
-                <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: page === currentPage }">
-                    <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
-                </li>
-                <li class="page-item" :class="{ disabled: currentPage >= totalPages }">
-                    <a class="page-link" href="#" @click.prevent="changePage(currentPage + 1)">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
     </div>
 </template>
 
@@ -235,16 +241,37 @@ onMounted(() => {
     object-fit: cover;
 }
 
+/* Cập nhật CSS cho pagination */
+.pagination {
+    margin-bottom: 0;
+}
+
 .pagination .page-link {
-    border-radius: 5px;
+    border-radius: 0.25rem;
+    /* Bo tròn góc */
     margin: 0 2px;
-    color: #198754;
-    transition: all 0.3s ease;
+    /* Khoảng cách giữa các nút */
+    color: #0d6efd;
+    /* Màu chữ mặc định (Bootstrap primary) */
+    transition: all 0.2s ease-in-out;
 }
 
 .pagination .page-item.active .page-link {
-    background-color: #198754;
-    border-color: #198754;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
     color: white;
+    z-index: 3;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
 }
 </style>
